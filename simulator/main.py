@@ -2,6 +2,7 @@ import time
 import json
 import random
 import os
+import logging
 import paho.mqtt.client as mqtt
 
 # Configurações
@@ -11,6 +12,9 @@ USER = os.getenv("MQTT_USERNAME")
 PASS = os.getenv("MQTT_PASSWORD")
 TOPIC_DATA = os.getenv("MQTT_TOPIC_SENSORS", "industrial/lathe/sensors")
 TOPIC_CMD = os.getenv("MQTT_TOPIC_COMMANDS", "industrial/lathe/commands")
+
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
+logger = logging.getLogger("simulator")
 
 # Estado Inicial
 state = {
@@ -22,19 +26,26 @@ state = {
 
 mode = "NORMAL"
 
-def on_connect(client, userdata, flags, rc):
-    print(f"Simulador Online (RC: {rc})")
-    client.subscribe(TOPIC_CMD)
+def on_connect(client, userdata, flags, rc, properties=None):
+    if rc == 0:
+        logger.info("Conectado ao broker %s:%s", BROKER, PORT)
+        client.subscribe(TOPIC_CMD)
+        logger.info("Assinando comandos em %s", TOPIC_CMD)
+    else:
+        logger.error("Falha na conexão MQTT (rc=%s)", rc)
 
 def on_message(client, userdata, msg):
     global mode
     cmd = msg.payload.decode().upper()
-    print(f"-> Comando: {cmd}")
+    logger.info("Comando recebido | topic=%s | payload=%s", msg.topic, cmd)
     if "NORMAL" in cmd: mode = "NORMAL"
     elif "HIGH_TEMP" in cmd: mode = "OVERHEAT"
     elif "HIGH_VIBRATION" in cmd: mode = "UNBALANCED"
 
-client = mqtt.Client()
+try:
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+except AttributeError:
+    client = mqtt.Client()
 if USER and PASS:
     client.username_pw_set(USER, PASS)
 client.on_connect = on_connect
@@ -44,11 +55,11 @@ try:
     client.connect(BROKER, PORT, 60)
     client.loop_start()
 except Exception as e:
-    print(f"Erro Conexão Broker: {e}")
+    logger.error("Erro ao conectar ao broker: %s", e)
     # Fallback para loop local sem MQTT (para debug)
     pass
 
-print("Iniciando geração de dados...")
+logger.info("Iniciando geração de dados. Publicando em %s", TOPIC_DATA)
 while True:
     # Física Simplificada
     if mode == "NORMAL":
@@ -67,11 +78,15 @@ while True:
     state["current"] = 12.0 + (state["vibration"] * 0.5) # Corrente sobe com vibração
 
     # Envio
-    try:
-        payload = json.dumps(state)
-        client.publish(TOPIC_DATA, payload)
-        print(f"Status: {mode} | T: {state['temperature']:.1f} | V: {state['vibration']:.1f}")
-    except:
-        pass
+    payload = json.dumps(state)
+    result = client.publish(TOPIC_DATA, payload)
+    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+        logger.info(
+            "Telemetria publicada | topic=%s | payload=%s",
+            TOPIC_DATA,
+            payload,
+        )
+    else:
+        logger.error("Falha ao publicar telemetria (rc=%s)", result.rc)
         
     time.sleep(2)
