@@ -119,8 +119,19 @@ def get_llm_response(provider: str, model: Optional[str], prompt: str, api_key: 
                 "stream": False,
                 "options": {"temperature": 0.2},
             }
-            response = requests.post(chat_url, json=payload, timeout=90)
-            response.raise_for_status()
+            try:
+                response = requests.post(chat_url, json=payload, timeout=90)
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as exc:
+                detail = ""
+                if exc.response is not None:
+                    try:
+                        error_json = exc.response.json()
+                        detail = error_json.get("error") or error_json.get("message", "")
+                    except ValueError:
+                        detail = exc.response.text
+                return f"Erro na chamada do LLM local: {detail or exc}"
+
             body = response.json()
             if "message" in body:
                 return body["message"].get("content", "")
@@ -269,6 +280,11 @@ def list_llm_models(provider: str, api_key: Optional[str] = None):
         raise HTTPException(500, f"Erro ao listar modelos: {exc}") from exc
 
     if not models:
+        if provider == "local":
+            raise HTTPException(
+                404,
+                "Nenhum modelo local encontrado. Execute 'ollama pull <modelo>' no container ollama e tente novamente."
+            )
         raise HTTPException(404, "Nenhum modelo encontrado para este provedor.")
 
     return {"provider": provider, "models": models}
@@ -308,7 +324,7 @@ def run_diagnosis(req: ChatRequest):
     # Prompt Engineering Científico/Técnico
     base_system = (
         "Você é um Engenheiro Sênior de Diagnóstico Industrial. "
-        "Sua tarefa é analisar falhas em máquinas rotativas. "
+        "Sua tarefa é analisar falhas em Tornos CNC. "
         "Seja técnico, direto e cite as fontes se disponíveis."
     )
     

@@ -49,6 +49,14 @@ if "last_telemetry_reading" not in st.session_state:
     st.session_state.last_telemetry_reading = None
 if "last_telemetry_time" not in st.session_state:
     st.session_state.last_telemetry_time = None
+if "auto_refresh_enabled" not in st.session_state:
+    st.session_state.auto_refresh_enabled = True
+if "auto_refresh_interval" not in st.session_state:
+    st.session_state.auto_refresh_interval = 2.0
+    
+@st.cache_resource
+def get_mqtt_queue() -> Queue:
+    return Queue()
 
 def build_mqtt_client():
     try:
@@ -56,7 +64,7 @@ def build_mqtt_client():
     except AttributeError:
         return mqtt.Client()
 
-mqtt_queue: "Queue[dict]" = Queue()
+mqtt_queue: "Queue[dict]" = get_mqtt_queue()
 
 # --- MQTT Loop (Background) ---
 def on_message(client, userdata, msg):
@@ -266,6 +274,22 @@ with st.sidebar:
         status_text += f" — {st.session_state.mqtt_error}"
     st.info("Status do Broker: " + status_text)
 
+    st.subheader("4. Atualização da Telemetria")
+    st.session_state.auto_refresh_enabled = st.toggle(
+        "Atualização automática (2s)",
+        value=st.session_state.auto_refresh_enabled,
+        help="Mantém o painel sincronizado sem precisar clicar em 'Atualizar Leituras'."
+    )
+    st.session_state.auto_refresh_interval = st.slider(
+        "Intervalo (segundos)",
+        min_value=1.0,
+        max_value=10.0,
+        step=0.5,
+        value=st.session_state.auto_refresh_interval,
+        help="Use valores maiores se quiser reduzir o uso de CPU.",
+        disabled=not st.session_state.auto_refresh_enabled,
+    )
+
 selected_model = st.session_state.llm_model_choice
 
 # Atualiza telemetria com qualquer mensagem pendente do MQTT
@@ -422,3 +446,8 @@ if st.session_state.diagnosis_history:
                 st.json(debug_payload["prompt_sections"])
 
     st.caption("Este resultado deve ser comparado com o 'Ground Truth' para avaliação experimental.")
+
+# Atualização automática do dashboard (opcional)
+if st.session_state.auto_refresh_enabled:
+    time.sleep(st.session_state.auto_refresh_interval)
+    st.rerun()

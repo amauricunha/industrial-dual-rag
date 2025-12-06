@@ -39,6 +39,22 @@ services:
       - "11434:11434"
     volumes:
       - ollama_models:/root/.ollama
+    env_file:
+      - ./.env
+    environment:
+      - OLLAMA_BOOT_MODEL=${OLLAMA_BOOT_MODEL:-llama3.2:3b}
+    entrypoint: []
+    command:
+      - /bin/sh
+      - -c
+      - |
+          MODEL="$${OLLAMA_BOOT_MODEL:-}"
+          /bin/ollama serve &
+          PID=$$!
+          if [ -n "$$MODEL" ]; then
+            (sleep 5 && /bin/ollama pull "$$MODEL" || true) &
+          fi
+          wait $$PID
     networks:
       - rag-net
 
