@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+paho-mqtt
+langchain
+langchain-community
+chromadb
+sentence-transformers
+groq
+google-generativeai
+openai
+python-multipart
+pypdf
+requests
+python-dotenv

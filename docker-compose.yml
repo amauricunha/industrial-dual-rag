@@ -1,0 +1,55 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    environment:
+      - MQTT_BROKER=test.mosquitto.org
+      - MQTT_TOPIC=senai/torno/telemetria
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      # Substitua pelas suas chaves ou use um arquivo .env
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - ollama
+    networks:
+      - rag-net
+
+  simulator:
+    build: ./simulator
+    environment:
+      - MQTT_BROKER=test.mosquitto.org
+      - MQTT_TOPIC=senai/torno/telemetria
+    restart: unless-stopped
+    networks:
+      - rag-net
+
+  web:
+    build: ./web
+    ports:
+      - "8501:8501"
+    environment:
+      - MQTT_BROKER=test.mosquitto.org
+    depends_on:
+      - api
+    networks:
+      - rag-net
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - rag-net
+
+networks:
+  rag-net:
+    driver: bridge
+
+volumes:
+  uploads_data:
+  ollama_models:  
