@@ -113,6 +113,7 @@ def get_llm_response(provider: str, model: Optional[str], prompt: str, api_key: 
                 chat_url = ollama_endpoint("/api/chat")
             except ValueError:
                 return "Erro: OLLAMA_BASE_URL não configurada."
+            timeout_seconds = int(os.getenv("OLLAMA_CHAT_TIMEOUT", "180"))
             payload = {
                 "model": model or os.getenv("OLLAMA_DEFAULT_MODEL", "llama3"),
                 "messages": [{"role": "user", "content": prompt}],
@@ -120,7 +121,7 @@ def get_llm_response(provider: str, model: Optional[str], prompt: str, api_key: 
                 "options": {"temperature": 0.2},
             }
             try:
-                response = requests.post(chat_url, json=payload, timeout=90)
+                response = requests.post(chat_url, json=payload, timeout=timeout_seconds)
                 response.raise_for_status()
             except requests.exceptions.HTTPError as exc:
                 detail = ""
@@ -323,9 +324,10 @@ def log_experiment(entry: ExperimentLogEntry):
 def run_diagnosis(req: ChatRequest):
     # Prompt Engineering Científico/Técnico
     base_system = (
-        "Você é um Engenheiro Sênior de Diagnóstico Industrial. "
-        "Sua tarefa é analisar falhas em Tornos CNC. "
-        "Seja técnico, direto e cite as fontes se disponíveis."
+        "Você é um Engenheiro Sênior de Diagnóstico Industrial especializado em máquinas de manufatura, com foco em tornos mecânicos."
+        "Analise condições de operação e identifique falhas com base na telemetria e no conteúdo técnico fornecido."
+        "Seja objetivo, técnico e utilize terminologia industrial correta."
+        "Quando possível, fundamente suas conclusões utilizando trechos do contexto."
     )
     
     context_part = ""
