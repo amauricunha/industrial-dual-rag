@@ -31,7 +31,7 @@ Este documento consolida os próximos incrementos necessários para concluir o p
   }
 - [ ] Implementar outros Rags como opção e liberar como parametros no UI, como FAISS, Weaviate e Pinecone.
 - [ ] garanta que temos no sistema document chunking, embedding via transformer encoders.
-- [ ] Definir métricas objetivas para cada cenário: accuracy de recuperação, BLEU, ROUGE, avaliação humana 1-5, latência fim-a-fim, logar isso no relatorio a cada experimento.
+- [ ] Definir métricas objetivas para cada cenário: accuracy de recuperação, BLEU, ROUGE, avaliação humana 1-5, latência fim-a-fim, logar isso no relatorio a cada experimento, incluindo o vetor de embending comparativo nao sei, para vermos os vetores comparativos de alguma forma nos chunks.
 - [ ] Instrumentar scripts automatizados para rodar as três condições (Baseline, RAG estático, Dual) com as mesmas perguntas (precisamos habilitar na interface o base_system variavel (sempre carrega o padroa que esta hoje fixo no main mas podemos editar e o api recebe como parametro).
 - [ ] Persistir resultados agregados (ex.: CSV + gráficos) para inclusão na seção de Experimentos do paper.
 
