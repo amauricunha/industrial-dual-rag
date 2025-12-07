@@ -13,7 +13,7 @@ pypdf
 requests
 python-dotenv
 faiss-cpu
-weaviate-client
+weaviate-client>=3.25.0,<4.0.0
 pinecone
 tiktoken
 pandas

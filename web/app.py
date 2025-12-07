@@ -155,7 +155,8 @@ mqtt_queue: "Queue[dict]" = get_mqtt_queue()
 def on_message(client, userdata, msg):
     try:
         payload_text = msg.payload.decode()
-        logger.info("MQTT recebido | topic=%s | payload=%s", msg.topic, payload_text)
+        if LOG_MQTT_EVENTS:
+            logger.info("MQTT recebido | topic=%s | payload=%s", msg.topic, payload_text)
         data = json.loads(payload_text)
         mqtt_queue.put(data)
     except Exception as exc:
@@ -171,18 +172,20 @@ def start_mqtt():
     if MQTT_USER and MQTT_PASS:
         client.username_pw_set(MQTT_USER, MQTT_PASS)
     try:
-        logger.info(
-            "Conectando ao broker %s:%s (dados=%s, comandos=%s)",
-            MQTT_BROKER,
-            MQTT_PORT,
-            MQTT_TOPIC_DATA,
-            MQTT_TOPIC_CMD,
-        )
+        if LOG_MQTT_EVENTS:
+            logger.info(
+                "Conectando ao broker %s:%s (dados=%s, comandos=%s)",
+                MQTT_BROKER,
+                MQTT_PORT,
+                MQTT_TOPIC_DATA,
+                MQTT_TOPIC_CMD,
+            )
         client.connect(MQTT_BROKER, MQTT_PORT, 60)
         client.subscribe(MQTT_TOPIC_DATA)
         client.on_message = on_message
         client.loop_start()
-        logger.info("Assinatura MQTT ativa no tópico %s", MQTT_TOPIC_DATA)
+        if LOG_MQTT_EVENTS:
+            logger.info("Assinatura MQTT ativa no tópico %s", MQTT_TOPIC_DATA)
         st.session_state.mqtt_error = None
         return client
     except Exception as e:
@@ -203,7 +206,8 @@ def pump_mqtt_queue():
         st.session_state.telemetry = payload
         st.session_state.last_telemetry_reading = payload.copy()
         st.session_state.last_telemetry_time = datetime.now(timezone.utc).isoformat()
-        logger.info("Atualizando dashboard com telemetria: %s", payload)
+        if LOG_MQTT_EVENTS:
+            logger.info("Atualizando dashboard com telemetria: %s", payload)
         updated = True
     return updated
 
@@ -245,7 +249,8 @@ def publish_command(command: str):
     if not MQTT_TOPIC_CMD:
         st.warning("Tópico MQTT de comandos não configurado.")
         return False
-    logger.info("Publicando comando MQTT | topic=%s | payload=%s", MQTT_TOPIC_CMD, command)
+    if LOG_MQTT_EVENTS:
+        logger.info("Publicando comando MQTT | topic=%s | payload=%s", MQTT_TOPIC_CMD, command)
     mqtt_client.publish(MQTT_TOPIC_CMD, command)
     return True
 

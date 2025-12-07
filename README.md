@@ -148,7 +148,7 @@ Para reproduzir os resultados do relatório científico:
 1. Na barra lateral, selecione o LLM (Recomendado: Groq/Llama3 para velocidade).
 Recommended Trio
 
-    - Groq → llama3-70b-8192:
+    - Groq → llama-3.3-70b-versatile · 131072 tok
     - Gemini → Gemini 2.5 Flash · 1048576 tok
     - Local → Ollama llama3.2:3b (ja carregado pelo docker-compose)
 
@@ -193,21 +193,6 @@ Recommended Trio
 - Utilize o arquivo `docs/gabarito.md`, que traz respostas derivadas do **Manual de Operação e Manutenção – ROMI T 240** para os cenários Normal, Falha Térmica e Desbalanceamento. Basta copiar o trecho do cenário correspondente para o campo da UI antes de rodar o teste.
 - Se adicionar novas falhas ou traduzir o manual, edite o arquivo mantendo a estrutura "Estado geral → Evidências → Ações" para preservar a consistência estatística.
 
-### Estratégia para comparar LLMs x encoders
-
-- O gabarito avalia exclusivamente a **resposta final do LLM**, portanto funciona com qualquer provedor (Groq, Gemini, Ollama) e é independente do backend ou do modelo de embedding escolhido. Se a resposta mencionar os limites corretos ("parar imediatamente", valores numéricos etc.) a métrica sobe; se o modelo divagar, a métrica cai.
-- O modelo de embedding (encoder) influencia apenas **quais chunks são recuperados**. Ao trocar o encoder e reindexar, você muda o contexto estático entregue ao LLM; o backend vetorial continua sendo apenas o repositório dos vetores.
-- Para avaliar somente backends, mantenha o encoder fixo e reindexe cada banco (Chroma, FAISS, Weaviate, Pinecone). Para avaliar encoders, troque o nome no campo "Modelo de embedding", reindexe e mantenha o backend fixo. Para avaliar LLMs, mantenha encoder + backend constantes e troque apenas o provedor.
-- Expectativa com encoder `all-MiniLM-L6-v2` e telemetria crítica:
-    - **Gemini 1.5/2.5 Flash**: respostas longas, cita limites e protocolos, tende a aderir quase literal ao gabarito.
-    - **Groq Llama3-70B**: estilo mais conciso, ainda assim com alta accuracy ao citar os mesmos limites.
-    - **Ollama Llama3.2 3B**: modelo menor, costuma resumir e pode perder detalhes, permitindo evidenciar a diferença para os externos.
-- Passo a passo recomendado para o experimento comparativo:
-    1. Fixe o encoder (ou execute um ciclo completo por encoder desejado, sempre reindexando antes de medir).
-    2. Rode os três provedores LLM no mesmo cenário, colando o gabarito correspondente no campo da UI.
-    3. Compare accuracy/BLEU/ROUGE/latência em `data/api/experiment_logs.csv` e use "📊 Gerar resumo automático" para visualizar os resultados.
-    4. Quando o objetivo for isolar o backend, repita os cenários após reprocessar a base para cada armazenamento.
-
 ## Limitações Operacionais
 
 - **Broker MQTT público:** o padrão (`test.mosquitto.org`) não oferece SLA, podendo sofrer quedas ou limitação de mensagens. Para medições consistentes, substitua por um broker privado (Eclipse Mosquitto local ou serviço gerenciado) e atualize as variáveis `MQTT_*` no `.env`.
@@ -219,30 +204,25 @@ Recommended Trio
 
 ````
 .
-├── api/                # Backend FastAPI e Lógica RAG
-│   ├── main.py         # Endpoints e construção de prompts
-│   └── Dockerfile
-├── web/                # Frontend Streamlit
-│   ├── app.py          # Dashboard e Cliente MQTT
-│   └── Dockerfile
-├── simulator/          # Script Python de Simulação IoT
-│   └── main.py
-├── data_storage/       # Persistência do ChromaDB (Gerado automaticamente)
-├── notebooks/          # Notebook para consolidação de métricas
-└── docker-compose.yml  # Orquestração
+├── api/                # Backend FastAPI e lógica RAG (uploads, endpoints, vetores)
+├── web/                # Frontend Streamlit com painel experimental
+├── simulator/          # Publicador MQTT de telemetria e injeção de falhas
+├── data/
+│   ├── api/            # Uploads, índices FAISS, logs e resumos persistidos
+│   └── weaviate/       # Volume local do contêiner Weaviate
+├── docs/               # Papel, apresentação, gabarito oficial e instruções extras
+├── notebooks/          # Consolidação opcional dos experimentos (Plotly/Pandas)
+├── docker-compose.yml  # Orquestração
+└── README.md
 ````
 
 ## Tecnologias Utilizadas
 
-* LLMs: Llama3 (via Groq), Gemini Pro.
-
-* RAG: ChromaDB, FAISS, Weaviate, Pinecone (Vector Stores), Sentence-Transformers.
-
-* Backend: FastAPI, Python.
-
-* Frontend: Streamlit.
-
-* IoT: Protocolo MQTT (Paho MQTT), Eclipse Mosquitto.
+* **LLMs**: Groq Llama 3.x (8B/70B), Gemini 1.5/2.5 Flash, Ollama Llama3.2 3B para o modo offline.
+* **RAG / Embeddings**: Sentence-Transformers (padrão `all-MiniLM-L6-v2`, com suporte a all-mpnet-base-v2, multi-qa-mpnet, gte-large, etc.), vetorização servida por ChromaDB, FAISS, Weaviate e Pinecone.
+* **Backend/API**: FastAPI + Python, langchain-community para integração com vetores, pandas/plotly para sumarização experimental.
+* **Frontend**: Streamlit (dashboard, upload, logging e controle de falhas) + Requests para chamadas à API.
+* **IoT / Mensageria**: MQTT (paho-mqtt), broker Mosquitto público/local, comandos de falha em tempo real.
 
 
 **Autores**: Amauri Cunha, Yessica Maria Valencia Lemos
