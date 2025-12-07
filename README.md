@@ -65,14 +65,21 @@ Quando o usuário solicita um diagnóstico, o fluxo depende do cenário:
 1. Renomeie ou crie o arquivo .env na raiz:
 
 ````
-# Broker MQTT (Público para testes ou Local)
-MQTT_BROKER_ADDRESS=test.mosquitto.org
-MQTT_BROKER_PORT=1883
+# Broker MQTT (público ou privado)
+MQTT_BROKER_ADDRESS=<ip ou endereco>
+MQTT_BROKER_PORT=<porta>
+MQTT_USERNAME=<login>
+MQTT_PASSWORD=<senha>
+MQTT_TOPIC_SENSORS=industrial/lathe/sensors
+MQTT_TOPIC_COMMANDS=industrial/lathe/commands
+LOG_MQTT_EVENTS=false
 
 # Chaves de API (Necessário para a inferência real)
 GROQ_API_KEY=sua_chave_aqui
 GOOGLE_API_KEY=sua_chave_aqui
-OLLAMA_CHAT_TIMEOUT=180
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_CHAT_TIMEOUT=600
+HUGGING_FACE_TOKEN=
 
 # Vetorização / RAG
 VECTOR_BACKEND_DEFAULT=chroma  # opções: chroma, faiss, weaviate, pinecone
@@ -80,6 +87,7 @@ CHUNK_SIZE_DEFAULT=1000
 CHUNK_OVERLAP_DEFAULT=200
 EMBEDDING_MODEL_DEFAULT=all-MiniLM-L6-v2
 FAISS_INDEX_DIR=/app/data/faiss_index
+CHROMA_DB_PATH=/app/data/chromadb
 
 # Relatórios de experimentos
 SUMMARY_OUTPUT_DIR=/app/data/summaries
