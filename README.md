@@ -117,6 +117,22 @@ docker-compose up --build
 - Esse passo evita subir os PDFs novamente e garante que o backend recém-selecionado receba os mesmos documentos antes de executar consultas.
 - Para Pinecone ou Weaviate externos, certifique-se de preencher as variáveis no `.env` antes de reprocessar para evitar erros de autenticação.
 
+### Modelo de embedding × backend vetorial
+
+- O modelo de embedding padrão é `all-MiniLM-L6-v2` (Sentence-Transformers). Ele é configurável tanto pelo `.env` (`EMBEDDING_MODEL_DEFAULT`) quanto pelo campo **"Modelo de embedding"** no Streamlit.
+- Alterar o backend de indexação **não** troca automaticamente o modelo de embedding; a escolha do SentenceTransformer é global. Se você mudar o modelo, reexecute `♻️ Reprocessar base existente` para gerar vetores com o novo encoder para Chroma/FAISS/Weaviate/Pinecone.
+- Chroma usa o `embedding_function` definido no backend, mas FAISS/Weaviate/Pinecone carregam explicitamente o modelo informado, garantindo comparações justas entre backends mesmo quando você alterna entre eles.
+- Documentamos essa decisão para atender ao critério experimental do professor: o estudo mantém o mesmo encoder enquanto troca apenas o armazenamento vetorial, isolando o efeito do backend.
+
+#### Outros encoders possíveis (SentenceTransformers):
+
+- all-mpnet-base-v2 – melhor recall geral, porém vetores de 768 dimensões (mais pesados).
+- multi-qa-mpnet-base-dot-v1 – otimizado para perguntas/respostas, boa escolha para manuais.
+- gte-large (GEMMA Text Embedding) – alternativa recente, 1024 dimensões.
+paraphrase-multilingual-mpnet-base-v2 – se precisar suportar PT/EN simultaneamente.
+
+Basta digitar o nome exato no campo “Modelo de embedding” da UI (desde que o pacote sentence-transformers o suporte) e reindexar.
+
 ### Persistência de dados e relatórios
 
 - O serviço `api` monta `./data/api` (host) em `/app/data`, concentrando `experiment_logs.csv`, PDFs processados e os resumos gerados em `SUMMARY_OUTPUT_DIR`. Assim, você pode abrir os CSV/HTML fora do Docker sem depender da UI.
@@ -130,6 +146,11 @@ Para reproduzir os resultados do relatório científico:
 ### Passo 1: Preparação
 
 1. Na barra lateral, selecione o LLM (Recomendado: Groq/Llama3 para velocidade).
+Recommended Trio
+
+    - Groq → llama3-70b-8192:
+    - Gemini → Gemini 2.5 Flash · 1048576 tok
+    - Local → Ollama llama3.2:3b (ja carregado pelo docker-compose)
 
 2. Faça upload do arquivo manual_torno.pdf (disponível na pasta /docs ou use um genérico).
 
@@ -165,6 +186,12 @@ Para reproduzir os resultados do relatório científico:
 
 * Ative o checkbox "Gravar logs de experimentos", informe um gabarito (quando houver) e execute diagnósticos.
 * As métricas são gravadas em `/app/data/experiment_logs.csv`. Após capturar os cenários desejados, clique no botão "📊 Gerar resumo automático" da barra lateral para consolidar CSVs e gráficos em `SUMMARY_OUTPUT_DIR` (padrão: `/app/data/summaries`). Se preferir inspeção manual, continue usando o notebook `notebooks/experiment_summary.ipynb`, que consome os mesmos arquivos.
+
+### Gabaritos de referência
+
+- O campo "Gabarito (referência para métricas)" compara a resposta do LLM com um texto oficial para calcular accuracy/BLEU/ROUGE.
+- Utilize o arquivo `docs/gabarito.md`, que traz respostas derivadas do **Manual de Operação e Manutenção – ROMI T 240** para os cenários Normal, Falha Térmica e Desbalanceamento. Basta copiar o trecho do cenário correspondente para o campo da UI antes de rodar o teste.
+- Se adicionar novas falhas ou traduzir o manual, edite o arquivo mantendo a estrutura "Estado geral → Evidências → Ações" para preservar a consistência estatística.
 
 ## Limitações Operacionais
 

@@ -24,6 +24,7 @@
 ## 4. Pipeline RAG Dual (2 slides)
 - Slide 1: ingestão → chunking configurável → embeddings Sentence-Transformers → upsert no backend escolhido.
 - Slide 2: seleção de sinais (multiselect), recuperação top-k, montagem do prompt com instruções customizadas e formato JSON.
+- Chamar atenção de que o modelo de embedding (Sentence-Transformers, default `all-MiniLM-L6-v2`) é escolhido uma única vez na UI e reaproveitado em todos os backends; trocar o backend requer apenas reprocessar os PDFs.
 - Nota: logs incluem tokens, contexto utilizado e telemetria realmente inserida no prompt.
 
 ## 5. Tecnologias e Modelos
@@ -37,7 +38,7 @@
 	 - Upload do manual de 45 páginas.
 	 - Ajuste dos sinais de telemetria e chunking.
 	 - Injeção de falhas via botões.
-	 - Coleta automática de métricas (accuracy, BLEU, ROUGE-L, latência, tokens) + gabarito opcional.
+	 - Coleta automática de métricas (accuracy, BLEU, ROUGE-L, latência, tokens) + gabarito opcional (referências mantidas em `docs/gabarito.md`).
 	 - Botão "📊 Gerar resumo automático" produz CSV/HTML em `data/api/summaries`.
 
 ## 7. Resultados e Insights (2 slides)

@@ -405,7 +405,11 @@ with st.sidebar:
     st.session_state.embedding_model = st.text_input(
         "Modelo de embedding (SentenceTransformer)",
         value=st.session_state.embedding_model,
-        help="Será usado para indexação e consultas nos backends não-Chroma.",
+        help=(
+            "Define qual SentenceTransformer gera os vetores. Alterar o backend de indexação"
+            " não troca este campo automaticamente: escolha o modelo aqui e reindexe para"
+            " que FAISS/Weaviate/Pinecone recebam os novos embeddings."
+        ),
     )
     # Heurística de seleção de sensores pedida no plano: escolhemos quais sinais
     # entram no prompt, facilitando estudos de ablation.
@@ -627,7 +631,10 @@ if log_experiments:
     reference_answer = st.text_area(
         "Gabarito (referência para métricas)",
         value="",
-        help="Informe a resposta ideal para calcular accuracy/BLEU/ROUGE. Opcional, mas necessário para métricas.",
+        help=(
+            "Cole aqui a resposta oficial (ex.: textos de docs/gabarito.md). Quando preenchido e"
+            " o logging estiver ativo, a API calcula accuracy/BLEU/ROUGE comparando o LLM com o gabarito."
+        ),
     )
 
 if st.button("Gerar Relatório de Diagnóstico", type="primary"):
