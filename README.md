@@ -147,6 +147,12 @@ Basta digitar o nome exato no campo “Modelo de embedding” da UI (desde que o
 - O contêiner do Weaviate escreve em `./data/weaviate`; mantenha essa pasta para preservar o índice local entre rebuilds.
 - Antes de executar `docker-compose up`, crie as pastas necessárias: `mkdir -p data/api data/weaviate`.
 
+### Limpeza rápida da pasta `data/`
+
+- O script `clean_data.sh` (na raiz do projeto) derruba os contêineres, apaga `./data` e recria a estrutura mínima (`api/chromadb`, `api/faiss_index`, `api/uploads`, `api/summaries` e `weaviate`). Use-o quando quiser reiniciar os índices do RAG, remover uploads antigos ou após corromper algum backend vetorial.
+- Execução normal: `bash clean_data.sh`. O script pede confirmação antes de destruir os arquivos. Para automatizar (CI ou scripts externos), rode `bash clean_data.sh --yes`.
+- Após a limpeza, execute `docker compose up --build -d` e reenvie/reprocesse os PDFs; sem isso os diagnósticos vão falhar porque nenhum índice estará carregado.
+
 ## Protocolo de Experimento
 
 Para reproduzir os resultados do relatório científico:
