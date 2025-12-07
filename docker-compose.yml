@@ -8,7 +8,7 @@ services:
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
     volumes:
-      - uploads_data:/app/uploads
+      - ./data/api:/app/data
     depends_on:
       - ollama
     networks:
@@ -58,10 +58,25 @@ services:
     networks:
       - rag-net
 
+  weaviate:
+    image: semitechnologies/weaviate:1.24.8
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      CLUSTER_HOSTNAME: node1
+      ENABLE_MODULES: none
+    volumes:
+      - ./data/weaviate:/var/lib/weaviate
+    networks:
+      - rag-net
+
 networks:
   rag-net:
     driver: bridge
 
 volumes:
-  uploads_data:
-  ollama_models:  
+  ollama_models:

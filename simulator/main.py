@@ -1,3 +1,5 @@
+"""Simulador MQTT que injeta telemetria sintética para o estudo de caso do torno."""
+
 import time
 import json
 import random
@@ -17,6 +19,8 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(
 logger = logging.getLogger("simulator")
 
 # Estado Inicial
+# Mantemos quatro sinais (status, temperatura, vibração, corrente) pois eles
+# alimentam o seletor de sensores e o cenário Dual do RAG.
 state = {
     "status": "NORMAL",
     "temperature": 45.0,
@@ -61,7 +65,8 @@ except Exception as e:
 
 logger.info("Iniciando geração de dados. Publicando em %s", TOPIC_DATA)
 while True:
-    # Física Simplificada
+    # Física Simplificada: cada modo altera os sinais para criar casos de teste
+    # repetíveis (baseline vs. falha), conforme exigido no enunciado.
     if mode == "NORMAL":
         state["temperature"] = 45.0 + random.uniform(-1, 1)
         state["vibration"] = 2.5 + random.uniform(-0.2, 0.2)

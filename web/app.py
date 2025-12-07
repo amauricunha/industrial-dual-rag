@@ -1,3 +1,14 @@
+"""Streamlit dashboard for configuring, testing, and logging the Dual-RAG pipeline.
+
+Relevância para a entrega:
+        * Expõe parâmetros de chunking/embedding, troca de backend vetorial e
+            seleção de sensores, permitindo comparar Baseline vs. RAG Estático vs. Dual.
+        * Oferece elementos experimentais: checkbox de logging, captura de gabarito
+            e botão de consolidação de métricas.
+        * Serve como interface de demonstração (upload → injeção de falhas →
+            diagnóstico), cobrindo o requisito de problema realista.
+"""
+
 import streamlit as st
 import requests
 import json
@@ -8,6 +19,9 @@ from queue import Queue, Empty
 from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
+from typing import Optional
+from sacrebleu import corpus_bleu
+from rouge_score import rouge_scorer
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
@@ -29,10 +43,58 @@ MQTT_TOPIC_DATA = env_or_default("MQTT_TOPIC_SENSORS", "MQTT_TOPIC", default="in
 MQTT_TOPIC_CMD = env_or_default("MQTT_TOPIC_COMMANDS", default="industrial/lathe/commands")
 MQTT_USER = os.getenv("MQTT_USERNAME")
 MQTT_PASS = os.getenv("MQTT_PASSWORD")
+VECTOR_BACKEND_OPTIONS = ["chroma", "faiss", "weaviate", "pinecone"]
+DEFAULT_VECTOR_BACKEND = os.getenv("VECTOR_BACKEND_DEFAULT", "chroma").lower()
+DEFAULT_CHUNK_SIZE = int(os.getenv("CHUNK_SIZE_DEFAULT", "1000"))
+DEFAULT_CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP_DEFAULT", "200"))
+DEFAULT_EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL_DEFAULT", "all-MiniLM-L6-v2")
+DEFAULT_BASE_SYSTEM = (
+    "Você é um Engenheiro Sênior de Diagnóstico Industrial especializado em máquinas de manufatura, com foco em tornos "
+    "mecânicos. Analise condições de operação e identifique falhas com base na telemetria e no conteúdo técnico "
+    "fornecido. Seja objetivo, técnico e utilize terminologia industrial correta. Quando possível, fundamente suas "
+    "conclusões utilizando trechos do contexto."
+)
+DEFAULT_INSTRUCTIONS = "\n".join(
+    [
+        "1. Sempre priorize valores de telemetria frente ao texto do contexto.",
+        "2. Use o contexto apenas como referência para limites e recomendações.",
+        "3. Classifique o estado geral entre NORMAL, ALERTA ou FALHA.",
+        "4. Justifique todas as decisões usando valores numéricos e trechos do contexto.",
+        "5. Nunca invente valores ou limites que não estiverem na telemetria ou no contexto.",
+        "6. Sempre cite a fonte do contexto entre colchetes quando possível.",
+        "7. Responda obrigatoriamente no formato JSON especificado a seguir.",
+    ]
+)
+DEFAULT_RESPONSE_FORMAT = {
+    "estado_geral": "NORMAL | ALERTA | FALHA",
+    "avaliacao_telemetria": {
+        "temperatura": {"valor": "", "analise": ""},
+        "vibracao_rms": {"valor": "", "analise": ""},
+        "corrente_motor": {"valor": "", "analise": ""},
+        "rpm": {"valor": "", "analise": ""},
+    },
+    "diagnostico_resumido": "",
+    "causas_provaveis": [""],
+    "acoes_recomendadas": [""],
+    "limites_referenciados": [{"variavel": "", "limite": "", "fonte_contexto": ""}],
+    "justificativa": "",
+    "trechos_utilizados": [""],
+}
+DEFAULT_RESPONSE_FORMAT_TEXT = json.dumps(DEFAULT_RESPONSE_FORMAT, indent=2, ensure_ascii=False)
+DEFAULT_LLM_TIMEOUT = int(os.getenv("OLLAMA_CHAT_TIMEOUT", "180"))
+TELEMETRY_SIGNAL_OPTIONS = [
+    ("status", "Status da máquina"),
+    ("temperature", "Temperatura (°C)"),
+    ("vibration", "Vibração RMS (mm/s)"),
+    ("current", "Corrente do motor (A)"),
+]
+TELEMETRY_SIGNAL_DEFAULTS = [opt[0] for opt in TELEMETRY_SIGNAL_OPTIONS]
 
 st.set_page_config(page_title="Industrial Dual-RAG Lab", layout="wide")
 
 # --- Estado ---
+# Mantemos os parâmetros do experimento no session_state para permitir que o
+# professor reproduza rapidamente diferentes combinações de prompts/sensores.
 if "telemetry" not in st.session_state:
     st.session_state.telemetry = {"temperature": 0, "vibration": 0, "current": 0, "status": "OFFLINE"}
 if "diagnosis_history" not in st.session_state:
@@ -53,6 +115,28 @@ if "auto_refresh_enabled" not in st.session_state:
     st.session_state.auto_refresh_enabled = True
 if "auto_refresh_interval" not in st.session_state:
     st.session_state.auto_refresh_interval = 2.0
+if "base_system_text" not in st.session_state:
+    st.session_state.base_system_text = DEFAULT_BASE_SYSTEM
+if "instructions_text" not in st.session_state:
+    st.session_state.instructions_text = DEFAULT_INSTRUCTIONS
+if "response_format_text" not in st.session_state:
+    st.session_state.response_format_text = DEFAULT_RESPONSE_FORMAT_TEXT
+if "llm_timeout" not in st.session_state:
+    st.session_state.llm_timeout = DEFAULT_LLM_TIMEOUT
+if "vector_backend_upload" not in st.session_state:
+    st.session_state.vector_backend_upload = DEFAULT_VECTOR_BACKEND
+if "vector_backend_infer" not in st.session_state:
+    st.session_state.vector_backend_infer = DEFAULT_VECTOR_BACKEND
+if "chunk_size" not in st.session_state:
+    st.session_state.chunk_size = DEFAULT_CHUNK_SIZE
+if "chunk_overlap" not in st.session_state:
+    st.session_state.chunk_overlap = DEFAULT_CHUNK_OVERLAP
+if "embedding_model" not in st.session_state:
+    st.session_state.embedding_model = DEFAULT_EMBEDDING_MODEL
+if "last_summary_meta" not in st.session_state:
+    st.session_state.last_summary_meta = None
+if "telemetry_signals" not in st.session_state:
+    st.session_state.telemetry_signals = TELEMETRY_SIGNAL_DEFAULTS.copy()
     
 @st.cache_resource
 def get_mqtt_queue() -> Queue:
@@ -166,7 +250,15 @@ def publish_command(command: str):
 
 
 def persist_experiment_log(question: str, scenario: int, response_payload: dict, llm_provider: str,
-                           llm_model: str, telemetry_snapshot: dict, latency_ms: float):
+                           llm_model: str, telemetry_snapshot: dict, latency_ms: float,
+                           reference_answer: Optional[str] = None,
+                           accuracy: Optional[float] = None,
+                           bleu: Optional[float] = None,
+                           rouge_l: Optional[float] = None,
+                           vector_backend: Optional[str] = None,
+                           prompt_tokens: Optional[int] = None,
+                           response_tokens: Optional[int] = None):
+    """Dispara o endpoint da API para registrar métricas exigidas no relatório."""
     log_body = {
         "question": question,
         "scenario": scenario,
@@ -177,11 +269,43 @@ def persist_experiment_log(question: str, scenario: int, response_payload: dict,
         "context_found": response_payload.get("context_found", False),
         "telemetry": telemetry_snapshot,
         "latency_ms": round(latency_ms, 2),
+        "reference_answer": reference_answer,
+        "accuracy": accuracy,
+        "bleu": bleu,
+        "rouge_l": rouge_l,
+        "vector_backend": vector_backend,
+        "prompt_tokens": prompt_tokens,
+        "response_tokens": response_tokens,
     }
     try:
         requests.post(f"{API_URL}/experiments/log", json=log_body, timeout=15)
     except requests.exceptions.RequestException as exc:
         st.warning(f"Falha ao gravar log experimental: {exc}")
+
+
+def compute_text_metrics(candidate: str, reference: str):
+    reference = (reference or "").strip()
+    candidate = (candidate or "").strip()
+    if not reference:
+        return None, None, None
+
+    accuracy = 1.0 if candidate.lower() == reference.lower() else 0.0
+    bleu_score = None
+    rouge_l_score = None
+
+    try:
+        bleu_score = corpus_bleu([candidate], [[reference]]).score
+    except Exception as exc:
+        logger.warning("Falha ao calcular BLEU: %s", exc)
+
+    try:
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
+        rouge_values = scorer.score(reference, candidate)
+        rouge_l_score = rouge_values["rougeL"].fmeasure * 100
+    except Exception as exc:
+        logger.warning("Falha ao calcular ROUGE-L: %s", exc)
+
+    return accuracy, bleu_score, rouge_l_score
 
 # --- CSS Customizado para Painéis ---
 st.markdown("""
@@ -254,12 +378,58 @@ with st.sidebar:
     st.session_state.llm_model_choice = selected_model
 
     st.subheader("3. Contexto Estático (RAG)")
+    st.session_state.vector_backend_upload = st.selectbox(
+        "Backend Vetorial (indexação)",
+        VECTOR_BACKEND_OPTIONS,
+        index=VECTOR_BACKEND_OPTIONS.index(st.session_state.vector_backend_upload)
+        if st.session_state.vector_backend_upload in VECTOR_BACKEND_OPTIONS else 0,
+    )
+    st.session_state.chunk_size = int(
+        st.number_input(
+            "Chunk size",
+            min_value=200,
+            max_value=4000,
+            step=100,
+            value=int(st.session_state.chunk_size),
+        )
+    )
+    st.session_state.chunk_overlap = int(
+        st.number_input(
+            "Chunk overlap",
+            min_value=0,
+            max_value=2000,
+            step=50,
+            value=int(st.session_state.chunk_overlap),
+        )
+    )
+    st.session_state.embedding_model = st.text_input(
+        "Modelo de embedding (SentenceTransformer)",
+        value=st.session_state.embedding_model,
+        help="Será usado para indexação e consultas nos backends não-Chroma.",
+    )
+    # Heurística de seleção de sensores pedida no plano: escolhemos quais sinais
+    # entram no prompt, facilitando estudos de ablation.
+    signal_labels = {value: label for value, label in TELEMETRY_SIGNAL_OPTIONS}
+    selected_signals = st.multiselect(
+        "Variáveis de telemetria enviadas ao LLM",
+        options=[opt[0] for opt in TELEMETRY_SIGNAL_OPTIONS],
+        default=st.session_state.telemetry_signals,
+        format_func=lambda value: signal_labels.get(value, value),
+        help="Remova sinais que não devem entrar no prompt (ex.: ocultar corrente ao testar apenas temperatura/vibração).",
+    )
+    st.session_state.telemetry_signals = selected_signals or TELEMETRY_SIGNAL_DEFAULTS.copy()
     uploaded = st.file_uploader("Carregar Manual (PDF)", type="pdf")
     if uploaded and st.button("Indexar Manual"):
         with st.spinner("Vetorizando documento..."):
             files = {"file": (uploaded.name, uploaded, "application/pdf")}
+            data = {
+                "vector_backend": st.session_state.vector_backend_upload,
+                "chunk_size": st.session_state.chunk_size,
+                "chunk_overlap": st.session_state.chunk_overlap,
+                "embedding_model": st.session_state.embedding_model,
+            }
             try:
-                res = requests.post(f"{API_URL}/upload", files=files, timeout=120)
+                res = requests.post(f"{API_URL}/upload", files=files, data=data, timeout=180)
                 if res.status_code != 200:
                     detail = res.json().get("detail") if res.headers.get("content-type", "").startswith("application/json") else res.text
                     st.error(f"Erro API: {detail}")
@@ -267,6 +437,32 @@ with st.sidebar:
                     st.success(f"Manual indexado! Chunks: {res.json()['chunks']}")
             except Exception as e:
                 st.error(f"Erro API: {e}")
+
+    if st.button("♻️ Reprocessar base existente", help="Reindexa todos os PDFs já enviados usando o backend e parâmetros atuais."):
+        with st.spinner("Reprocessando manuais existentes..."):
+            payload = {
+                "vector_backend": st.session_state.vector_backend_upload,
+                "chunk_size": st.session_state.chunk_size,
+                "chunk_overlap": st.session_state.chunk_overlap,
+                "embedding_model": st.session_state.embedding_model,
+            }
+            try:
+                resp = requests.post(f"{API_URL}/reindex", json=payload, timeout=240)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    st.success(
+                        f"{data.get('total_documents', 0)} manual(is) reprocessado(s) para {data.get('backend')} "
+                        f"({data.get('total_chunks', 0)} chunks)."
+                    )
+                    skipped = data.get("skipped") or []
+                    if skipped:
+                        skipped_list = ", ".join(item.get("file", "?") for item in skipped)
+                        st.warning(f"Alguns arquivos foram ignorados: {skipped_list}")
+                else:
+                    detail = resp.json().get("detail") if resp.headers.get("content-type", "").startswith("application/json") else resp.text
+                    st.error(f"Erro ao reprocessar: {detail}")
+            except Exception as exc:
+                st.error(f"Erro de conexão: {exc}")
     
     st.markdown("---")
     status_text = "🟢 Conectado" if mqtt_client else "🔴 Desconectado"
@@ -289,6 +485,29 @@ with st.sidebar:
         help="Use valores maiores se quiser reduzir o uso de CPU.",
         disabled=not st.session_state.auto_refresh_enabled,
     )
+
+    st.subheader("5. Relatórios de Experimentos")
+    st.caption("Gere arquivos consolidados dos testes registrados em /app/data/experiment_logs.csv.")
+    # Botão pedido na etapa de Experimentos: dispara o endpoint que lê o CSV e
+    # exporta tabelas/gráficos prontos para o relatório científico.
+    if st.button("📊 Gerar resumo automático", use_container_width=True):
+        with st.spinner("Consolidando métricas e gráficos..."):
+            try:
+                resp = requests.post(f"{API_URL}/experiments/summarize", json={}, timeout=180)
+                if resp.status_code == 200:
+                    payload = resp.json()
+                    st.session_state.last_summary_meta = payload
+                    output_dir = payload.get("output_dir", "")
+                    st.success(f"Resumo disponível em {output_dir}")
+                    artifacts = payload.get("artifacts") or {}
+                    if artifacts:
+                        st.caption("Arquivos gerados:")
+                        st.json(artifacts)
+                else:
+                    detail = resp.json().get("detail") if resp.headers.get("content-type", "").startswith("application/json") else resp.text
+                    st.error(f"Erro ao gerar resumo: {detail}")
+            except Exception as exc:
+                st.error(f"Erro de conexão: {exc}")
 
 selected_model = st.session_state.llm_model_choice
 
@@ -343,6 +562,8 @@ with col_ctrl_1:
 
 with col_ctrl_2:
     st.subheader("🧪 Cenário de Avaliação")
+    # Radio principal usado para comparar baseline, RAG estático e dual conforme
+    # solicitado no enunciado.
     scenario = st.radio(
         "Selecione o nível de contexto fornecido ao LLM:",
         [1, 2, 3],
@@ -351,6 +572,46 @@ with col_ctrl_2:
             2: "2. RAG Estático: Acesso apenas aos Manuais PDF.",
             3: "3. Dual-Context RAG: Manuais + Dados dos Sensores em Tempo Real."
         }[x]
+    )
+    st.session_state.vector_backend_infer = st.selectbox(
+        "Backend Vetorial (consulta)",
+        VECTOR_BACKEND_OPTIONS,
+        index=VECTOR_BACKEND_OPTIONS.index(st.session_state.vector_backend_infer)
+        if st.session_state.vector_backend_infer in VECTOR_BACKEND_OPTIONS else 0,
+        help="Define de qual base vetorial virão os chunks quando o cenário usar RAG.",
+    )
+
+st.subheader("⚙️ Prompt e Saída Estruturada")
+with st.expander("Configurar base system, instruções e formato JSON", expanded=False):
+    st.text_area(
+        "Base System Prompt",
+        value=st.session_state.base_system_text,
+        key="base_system_text",
+        height=150,
+        help="Mensagem inicial que define o papel do LLM.",
+    )
+    st.text_area(
+        "Instruções (uma por linha)",
+        value=st.session_state.instructions_text,
+        key="instructions_text",
+        height=180,
+        help="Será enviada antes do contexto. Use linhas separadas para cada instrução.",
+    )
+    st.text_area(
+        "Formato de resposta (JSON)",
+        value=st.session_state.response_format_text,
+        key="response_format_text",
+        height=220,
+        help="Estrutura que o LLM deve seguir. Precisa ser um JSON válido.",
+    )
+    st.number_input(
+        "Timeout do LLM local (segundos)",
+        min_value=60,
+        max_value=600,
+        step=30,
+        value=int(st.session_state.llm_timeout),
+        key="llm_timeout",
+        help="Use valores maiores se o prompt for longo.",
     )
 
 # 3. PAINEL DE DIAGNÓSTICO
@@ -361,11 +622,28 @@ query = st.text_input("Pergunta do Operador", "Qual o estado atual da máquina e
 show_debug = st.checkbox("Gerar logs detalhados do prompt", value=True)
 log_experiments = st.checkbox("Gravar logs de experimentos (CSV)", value=False,
                               help="Armazena cada diagnóstico em /app/data/experiment_logs.csv para análise posterior.")
+reference_answer = ""
+if log_experiments:
+    reference_answer = st.text_area(
+        "Gabarito (referência para métricas)",
+        value="",
+        help="Informe a resposta ideal para calcular accuracy/BLEU/ROUGE. Opcional, mas necessário para métricas.",
+    )
 
 if st.button("Gerar Relatório de Diagnóstico", type="primary"):
     if not selected_model:
         st.error("Selecione ou informe um modelo LLM antes de continuar.")
     else:
+        instructions_list = [line.strip() for line in st.session_state.instructions_text.splitlines() if line.strip()]
+        response_format_obj = None
+        response_format_raw = st.session_state.response_format_text.strip()
+        if response_format_raw:
+            try:
+                response_format_obj = json.loads(response_format_raw)
+            except json.JSONDecodeError as exc:
+                st.error(f"JSON do formato de resposta inválido: {exc}")
+                response_format_obj = None
+                st.stop()
         with st.spinner(f"Processando no Cenário {scenario}..."):
             start_time = time.perf_counter()
             payload = {
@@ -375,17 +653,34 @@ if st.button("Gerar Relatório de Diagnóstico", type="primary"):
                 "llm_provider": llm_provider,
                 "llm_model": selected_model,
                 "api_key": api_key if api_key else None,
-                "debug": show_debug
+                "debug": show_debug,
+                "base_system": st.session_state.base_system_text,
+                "instructions": instructions_list,
+                "response_format": response_format_obj,
+                "llm_timeout": int(st.session_state.llm_timeout),
+                "vector_backend": st.session_state.vector_backend_infer,
+                "embedding_model": st.session_state.embedding_model,
+                "telemetry_signals": st.session_state.telemetry_signals or TELEMETRY_SIGNAL_DEFAULTS,
             }
+            # Este payload carrega tudo que o professor pode variar: provedor LLM,
+            # backend vetorial, chunking, sensores selecionados e prompt template.
             
             try:
-                resp = requests.post(f"{API_URL}/chat", json=payload, timeout=120)
+                api_timeout = max(120, int(st.session_state.llm_timeout) + 30)
+                resp = requests.post(f"{API_URL}/chat", json=payload, timeout=api_timeout)
                 if resp.status_code == 200:
                     data = resp.json()
                     st.session_state.diagnosis_history = data
                     if log_experiments:
                         elapsed_ms = (time.perf_counter() - start_time) * 1000
                         telemetry_snapshot = data.get("debug", {}).get("telemetry_used") or st.session_state.telemetry
+                        accuracy = bleu = rouge_l = None
+                        if reference_answer.strip():
+                            accuracy, bleu, rouge_l = compute_text_metrics(
+                                data.get("response", ""),
+                                reference_answer,
+                            )
+                        token_usage = data.get("token_usage", {}) or {}
                         persist_experiment_log(
                             question=query,
                             scenario=scenario,
@@ -394,6 +689,13 @@ if st.button("Gerar Relatório de Diagnóstico", type="primary"):
                             llm_model=selected_model,
                             telemetry_snapshot=telemetry_snapshot,
                             latency_ms=elapsed_ms,
+                            reference_answer=reference_answer.strip() or None,
+                            accuracy=accuracy,
+                            bleu=bleu,
+                            rouge_l=rouge_l,
+                            vector_backend=st.session_state.vector_backend_infer,
+                            prompt_tokens=token_usage.get("prompt"),
+                            response_tokens=token_usage.get("response"),
                         )
                 else:
                     detail = resp.json().get("detail") if resp.headers.get("content-type", "").startswith("application/json") else resp.text
@@ -414,6 +716,11 @@ if st.session_state.diagnosis_history:
         st.success("📚 Documentação Técnica Relevante Encontrada e Utilizada.")
     elif scenario > 1:
         st.warning("⚠️ Nenhuma documentação relevante encontrada para esta consulta.")
+    if res.get("vector_backend"):
+        st.caption(f"Backend Vetorial: {res['vector_backend']}")
+    token_info = res.get("token_usage") or {}
+    if token_info:
+        st.caption(f"Tokens · prompt: {token_info.get('prompt', 'n/d')} · resposta: {token_info.get('response', 'n/d')}")
         
     # Conteúdo do Diagnóstico
     with st.container(border=True):
