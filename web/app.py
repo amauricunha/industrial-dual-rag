@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from typing import Optional
 from sacrebleu import corpus_bleu
 from rouge_score import rouge_scorer
+from bert_score import BERTScorer
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
@@ -83,6 +84,8 @@ DEFAULT_RESPONSE_FORMAT = {
 }
 DEFAULT_RESPONSE_FORMAT_TEXT = json.dumps(DEFAULT_RESPONSE_FORMAT, indent=2, ensure_ascii=False)
 DEFAULT_LLM_TIMEOUT = int(os.getenv("OLLAMA_CHAT_TIMEOUT", "180"))
+BERT_SCORE_MODEL = os.getenv("BERT_SCORE_MODEL", "neuralmind/bert-base-portuguese-cased")
+BERT_SCORE_FALLBACK_MODEL = "xlm-roberta-base"
 TELEMETRY_SIGNAL_OPTIONS = [
     ("status", "Status da máquina"),
     ("temperature", "Temperatura (°C)"),
@@ -142,6 +145,23 @@ if "telemetry_signals" not in st.session_state:
 @st.cache_resource
 def get_mqtt_queue() -> Queue:
     return Queue()
+
+
+@st.cache_resource
+def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
+    target_model = model_name or BERT_SCORE_FALLBACK_MODEL
+    try:
+        return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
+    except Exception as exc:
+        if target_model == BERT_SCORE_FALLBACK_MODEL:
+            raise
+        logger.warning(
+            "Falha ao inicializar BERTScore com %s (%s). Usando fallback %s.",
+            target_model,
+            exc,
+            BERT_SCORE_FALLBACK_MODEL,
+        )
+        return BERTScorer(lang="pt", model_type=BERT_SCORE_FALLBACK_MODEL, rescale_with_baseline=True)
 
 def build_mqtt_client():
     try:
@@ -261,9 +281,11 @@ def persist_experiment_log(question: str, scenario: int, response_payload: dict,
                            accuracy: Optional[float] = None,
                            bleu: Optional[float] = None,
                            rouge_l: Optional[float] = None,
+                           bert_score_f1: Optional[float] = None,
                            vector_backend: Optional[str] = None,
                            prompt_tokens: Optional[int] = None,
-                           response_tokens: Optional[int] = None):
+                           response_tokens: Optional[int] = None,
+                           vector_debug: Optional[dict] = None):
     """Dispara o endpoint da API para registrar métricas exigidas no relatório."""
     log_body = {
         "question": question,
@@ -279,10 +301,14 @@ def persist_experiment_log(question: str, scenario: int, response_payload: dict,
         "accuracy": accuracy,
         "bleu": bleu,
         "rouge_l": rouge_l,
+        "bert_score_f1": bert_score_f1,
         "vector_backend": vector_backend,
         "prompt_tokens": prompt_tokens,
         "response_tokens": response_tokens,
     }
+    if vector_debug:
+        log_body["query_embedding"] = vector_debug.get("query_embedding")
+        log_body["retrieved_vectors"] = vector_debug.get("retrieved")
     try:
         requests.post(f"{API_URL}/experiments/log", json=log_body, timeout=15)
     except requests.exceptions.RequestException as exc:
@@ -293,11 +319,12 @@ def compute_text_metrics(candidate: str, reference: str):
     reference = (reference or "").strip()
     candidate = (candidate or "").strip()
     if not reference:
-        return None, None, None
+        return None, None, None, None
 
     accuracy = 1.0 if candidate.lower() == reference.lower() else 0.0
     bleu_score = None
     rouge_l_score = None
+    bert_f1_score = None
 
     try:
         bleu_score = corpus_bleu([candidate], [[reference]]).score
@@ -311,7 +338,41 @@ def compute_text_metrics(candidate: str, reference: str):
     except Exception as exc:
         logger.warning("Falha ao calcular ROUGE-L: %s", exc)
 
-    return accuracy, bleu_score, rouge_l_score
+    try:
+        scorer = get_bert_scorer()
+        _, _, f1 = scorer.score([candidate], [reference])
+        bert_f1_score = float(f1.mean().item() * 100)
+    except Exception as exc:
+        logger.warning("Falha ao calcular BERTScore: %s", exc)
+
+    return accuracy, bleu_score, rouge_l_score, bert_f1_score
+
+
+def format_vector_preview(vector: list[float], limit: int = 16) -> str:
+    if not vector:
+        return "[]"
+    clipped = vector[:limit]
+    preview = ", ".join(f"{value:.4f}" for value in clipped)
+    if len(vector) > limit:
+        preview += ", ..."
+    return f"[{preview}]"
+
+
+def render_vector_preview(label: str, vector: list[float], limit: int = 16):
+    if not vector:
+        st.caption(f"{label}: sem dados disponíveis.")
+        return
+    st.markdown(f"**{label} (primeiras {limit} dimensões)**")
+    st.code(format_vector_preview(vector, limit), language="text")
+    with st.expander(f"Ver {label} completo", expanded=False):
+        st.dataframe(
+            {
+                "dimensão": list(range(len(vector))),
+                "valor": vector,
+            },
+            hide_index=True,
+            use_container_width=True,
+        )
 
 # --- CSS Customizado para Painéis ---
 st.markdown("""
@@ -687,9 +748,10 @@ if st.button("Gerar Relatório de Diagnóstico", type="primary"):
                     if log_experiments:
                         elapsed_ms = (time.perf_counter() - start_time) * 1000
                         telemetry_snapshot = data.get("debug", {}).get("telemetry_used") or st.session_state.telemetry
+                        vector_debug = data.get("vector_debug") or data.get("debug", {}).get("vector_debug")
                         accuracy = bleu = rouge_l = None
                         if reference_answer.strip():
-                            accuracy, bleu, rouge_l = compute_text_metrics(
+                            accuracy, bleu, rouge_l, bert_f1 = compute_text_metrics(
                                 data.get("response", ""),
                                 reference_answer,
                             )
@@ -706,9 +768,11 @@ if st.button("Gerar Relatório de Diagnóstico", type="primary"):
                             accuracy=accuracy,
                             bleu=bleu,
                             rouge_l=rouge_l,
+                            bert_score_f1=bert_f1,
                             vector_backend=st.session_state.vector_backend_infer,
                             prompt_tokens=token_usage.get("prompt"),
                             response_tokens=token_usage.get("response"),
+                            vector_debug=vector_debug,
                         )
                 else:
                     detail = resp.json().get("detail") if resp.headers.get("content-type", "").startswith("application/json") else resp.text
@@ -764,6 +828,36 @@ if st.session_state.diagnosis_history:
             if debug_payload.get("prompt_sections"):
                 st.markdown("**Seções do prompt (para inspeção rápida)**")
                 st.json(debug_payload["prompt_sections"])
+
+            vector_debug = res.get("vector_debug") or debug_payload.get("vector_debug")
+            if vector_debug:
+                with st.expander("Embeddings e similaridade (cosine)", expanded=False):
+                    query_vec = vector_debug.get("query_embedding") or []
+                    model_name = vector_debug.get("embedding_model", "n/d")
+                    st.caption(
+                        f"Modelo de embedding: {model_name} · Dimensão do vetor: {len(query_vec) if query_vec else 'n/d'}"
+                    )
+                    render_vector_preview("Vetor da pergunta", query_vec)
+
+                    retrieved_items = vector_debug.get("retrieved") or []
+                    if not retrieved_items:
+                        st.caption("Nenhum chunk vetorial disponível para esta consulta.")
+                    else:
+                        st.markdown("**Chunks recuperados (vetores completos e similaridade)**")
+                        for item in retrieved_items:
+                            idx = item.get("index")
+                            chunk_label = idx + 1 if isinstance(idx, int) else "?"
+                            source = item.get("source") or "desconhecido"
+                            similarity = item.get("similarity")
+                            if isinstance(similarity, (int, float)):
+                                similarity_str = f"{similarity:.4f}"
+                            else:
+                                similarity_str = "n/d"
+                            st.markdown(f"**Chunk {chunk_label} · Fonte:** {source}")
+                            st.caption(f"Similaridade (cosseno): {similarity_str}")
+                            if item.get("chunk_preview"):
+                                st.write(item["chunk_preview"])
+                            render_vector_preview(f"Vetor do chunk {chunk_label}", item.get("embedding", []))
 
     st.caption("Este resultado deve ser comparado com o 'Ground Truth' para avaliação experimental.")
 

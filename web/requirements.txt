@@ -6,3 +6,4 @@ python-dotenv
 paho-mqtt
 sacrebleu
 rouge-score
+bert-score

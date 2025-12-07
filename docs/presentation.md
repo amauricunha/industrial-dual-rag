@@ -38,7 +38,7 @@
 	 - Upload do manual de 45 páginas.
 	 - Ajuste dos sinais de telemetria e chunking.
 	 - Injeção de falhas via botões.
-	 - Coleta automática de métricas (accuracy, BLEU, ROUGE-L, latência, tokens) + gabarito opcional (referências mantidas em `docs/gabarito.md`).
+	 - Coleta automática de métricas (accuracy, BLEU, ROUGE-L, **BERTScore F1**, latência, tokens) + gabarito opcional (referências mantidas em `docs/gabarito.md`).
 	 - Botão "📊 Gerar resumo automático" produz CSV/HTML em `data/api/summaries`.
 
 ## 7. Resultados e Insights (2 slides)

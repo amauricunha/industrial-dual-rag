@@ -20,7 +20,7 @@ O sistema é composto por três módulos principais orquestrados via Docker:
 * Vector Database configurável (ChromaDB, FAISS, Weaviate e Pinecone): armazena embeddings dos manuais técnicos (Contexto Estático).
 * LLM Gateway: Conecta-se a modelos externos (Groq, Gemini) ou locais.
 * Lógica de Experimento: Monta o prompt dinamicamente baseada no cenário escolhido (1, 2 ou 3), permitindo ajuste de `base_system`, instruções e formato de resposta JSON.
-* Métricas automáticas (accuracy, BLEU, ROUGE-L, latência e tokens) persistidas em CSV quando o registro de experimentos está ativo.
+* Métricas automáticas (accuracy, BLEU, ROUGE-L, **BERTScore F1**, latência e tokens) persistidas em CSV quando o registro de experimentos está ativo.
 
 3. Interface do Operador (/web):
 
@@ -92,6 +92,9 @@ CHROMA_DB_PATH=/app/data/chromadb
 # Relatórios de experimentos
 SUMMARY_OUTPUT_DIR=/app/data/summaries
 SUMMARY_MAX_RECENT=50
+
+# Avaliação automática
+BERT_SCORE_MODEL=neuralmind/bert-base-portuguese-cased
 
 # Weaviate (opcional)
 WEAVIATE_URL=http://weaviate:8080  # container local já incluso no docker-compose
@@ -203,9 +206,24 @@ Recommended Trio
 
 ### Gabaritos de referência
 
-- O campo "Gabarito (referência para métricas)" compara a resposta do LLM com um texto oficial para calcular accuracy/BLEU/ROUGE.
+- O campo "Gabarito (referência para métricas)" compara a resposta do LLM com um texto oficial para calcular accuracy/BLEU/ROUGE/BERTScore F1.
 - Utilize o arquivo `docs/gabarito.md`, que traz respostas derivadas do **Manual de Operação e Manutenção – ROMI T 240** para os cenários Normal, Falha Térmica e Desbalanceamento. Basta copiar o trecho do cenário correspondente para o campo da UI antes de rodar o teste.
 - Se adicionar novas falhas ou traduzir o manual, edite o arquivo mantendo a estrutura "Estado geral → Evidências → Ações" para preservar a consistência estatística.
+
+### Métricas automáticas (Accuracy × BERTScore)
+
+- `accuracy`: permanece como *exact match* (1 quando a resposta textual bate exatamente com o gabarito, 0 caso contrário). Útil para perguntas curtas, mas tende a ser rígido para relatórios JSON.
+- `BLEU`/`ROUGE-L`: mantêm o acompanhamento de sobreposição lexical.
+- `bert_score_f1`: novo indicador semântico baseado em `BERTScore` (Zhang et al., ICLR 2020). Utilizamos por padrão o modelo `neuralmind/bert-base-portuguese-cased`, calibrado para PT-BR, e escalamos o F1 para 0–100. Essa métrica captura equivalências mesmo quando o LLM muda a estrutura do texto.
+- Para trocar o backbone do BERTScore, ajuste `BERT_SCORE_MODEL` no `.env`. Modelos menores reduzem consumo de RAM, enquanto variantes maiores (ex.: `microsoft/deberta-large-mnli`) melhoram a correlação com especialistas humanos.
+- Caso o modelo configurado não esteja disponível (sem cache local ou sem acesso à internet), o backend faz fallback automático para `xlm-roberta-base` e registra um aviso no log.
+
+### Logs detalhados de embeddings e similaridade
+
+- Marque o checkbox **"Gerar logs detalhados do prompt"** antes de clicar em "Gerar Relatório". A UI exibirá um *expander* com:
+    - Prompt final, chunks utilizados e snapshot de telemetria.
+    - Vetor da pergunta + vetores dos chunks retornados, com similaridade cosseno calculada localmente.
+- Esses vetores também são persistidos quando o logging experimental está ativo, permitindo auditar o RAG no arquivo `data/api/experiment_logs.csv`. Não é necessário rebuild: basta ter o checkbox ativo no momento da execução.
 
 ## Limitações Operacionais
 

@@ -14,6 +14,7 @@ import os
 import json
 import csv
 import logging
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -162,6 +163,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 
 def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
     """Agrega métricas e gera gráficos citáveis, atendendo ao critério experimental."""
+    ensure_experiment_log_schema(EXPERIMENT_LOG_COLUMNS)
     csv_path = Path(EXPERIMENT_LOG)
     if not csv_path.exists():
         raise HTTPException(404, "Arquivo experiment_logs.csv não encontrado. Execute experimentos antes de consolidar.")
@@ -175,7 +177,7 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
 
     numeric_cols = [
         col
-        for col in ["accuracy", "bleu", "rouge_l", "latency_ms", "prompt_tokens", "response_tokens"]
+        for col in ["accuracy", "bleu", "rouge_l", "bert_score_f1", "latency_ms", "prompt_tokens", "response_tokens"]
         if col in df.columns
     ]
     for col in numeric_cols:
@@ -259,6 +261,48 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
         json.dump(metadata, meta_file, ensure_ascii=False, indent=2)
 
     return metadata
+
+
+def ensure_experiment_log_schema(fieldnames: List[str]):
+    """Garante que o CSV de experimentos contenha o cabeçalho atualizado."""
+    if not os.path.exists(EXPERIMENT_LOG):
+        return
+    try:
+        with open(EXPERIMENT_LOG, newline="") as csvfile:
+            reader = list(csv.reader(csvfile))
+    except OSError as exc:  # pragma: no cover - apenas log
+        logger.warning("Não foi possível ler experiment_logs.csv para validação: %s", exc)
+        return
+
+    if not reader:
+        try:
+            with open(EXPERIMENT_LOG, "w", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(fieldnames)
+        except OSError as exc:  # pragma: no cover
+            logger.warning("Falha ao reescrever cabeçalho vazio em experiment_logs.csv: %s", exc)
+        return
+
+    current_header = reader[0]
+    if current_header == fieldnames:
+        return
+
+    normalized_rows = []
+    target_len = len(fieldnames)
+    for row in reader[1:]:
+        if len(row) < target_len:
+            row = row + [""] * (target_len - len(row))
+        elif len(row) > target_len:
+            row = row[:target_len]
+        normalized_rows.append(row)
+
+    try:
+        with open(EXPERIMENT_LOG, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(fieldnames)
+            writer.writerows(normalized_rows)
+    except OSError as exc:  # pragma: no cover
+        logger.warning("Falha ao atualizar schema de experiment_logs.csv: %s", exc)
 
 
 def ensure_backend_supported(backend: str):
@@ -429,6 +473,66 @@ def safe_float(value, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
+    """Calcula a similaridade cosseno entre dois vetores arbitrários."""
+    if not vec_a or not vec_b:
+        return 0.0
+    dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(a * a for a in vec_a))
+    norm_b = math.sqrt(sum(b * b for b in vec_b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot_product / (norm_a * norm_b)
+
+
+def build_vector_debug(
+    question: str,
+    chunks: List[str],
+    metadatas: List[dict],
+    embedding_model: str,
+) -> dict:
+    """Gera embeddings da pergunta/chunks e calcula similaridade para inspeção."""
+    if not question or not chunks:
+        return {}
+
+    try:
+        embedder = get_embedding_function(embedding_model)
+    except Exception as exc:  # pragma: no cover - fallback defensivo
+        logger.warning("Falha ao carregar embedder para debug vetorial: %s", exc)
+        return {}
+
+    try:
+        query_embedding = embedder.embed_query(question)
+        chunk_embeddings = embedder.embed_documents(chunks)
+    except Exception as exc:  # pragma: no cover - logging apenas
+        logger.warning("Falha ao gerar embeddings para debug vetorial: %s", exc)
+        return {}
+
+    details = []
+    for idx, chunk_embedding in enumerate(chunk_embeddings):
+        chunk_text = chunks[idx]
+        metadata = metadatas[idx] if idx < len(metadatas) else {}
+        similarity = cosine_similarity(query_embedding, chunk_embedding)
+        preview = chunk_text[:240] + ("..." if len(chunk_text) > 240 else "")
+        details.append(
+            {
+                "index": idx,
+                "source": metadata.get("source"),
+                "similarity": similarity,
+                "embedding": chunk_embedding,
+                "metadata": metadata,
+                "chunk_preview": preview,
+            }
+        )
+
+    return {
+        "embedding_model": embedding_model,
+        "metric": "cosine",
+        "query_embedding": query_embedding,
+        "retrieved": details,
+    }
 
 
 def build_telemetry_section(telemetry: Optional[dict], allowed_keys: Optional[List[str]] = None):
@@ -605,6 +709,32 @@ class ExperimentLogEntry(BaseModel):
     vector_backend: Optional[str] = None
     prompt_tokens: Optional[int] = None
     response_tokens: Optional[int] = None
+    query_embedding: Optional[List[float]] = None
+    retrieved_vectors: Optional[List[Dict[str, Any]]] = None
+    bert_score_f1: Optional[float] = None
+
+EXPERIMENT_LOG_COLUMNS = [
+    "timestamp",
+    "question",
+    "scenario",
+    "mode_used",
+    "llm_provider",
+    "llm_model",
+    "vector_backend",
+    "context_found",
+    "latency_ms",
+    "reference_answer",
+    "accuracy",
+    "bleu",
+    "rouge_l",
+    "bert_score_f1",
+    "prompt_tokens",
+    "response_tokens",
+    "telemetry",
+    "response",
+    "query_embedding",
+    "retrieved_vectors",
+]
 
 # --- Endpoints ---
 
@@ -871,14 +1001,18 @@ def log_experiment(entry: ExperimentLogEntry):
         "accuracy": entry.accuracy if entry.accuracy is not None else "",
         "bleu": entry.bleu if entry.bleu is not None else "",
         "rouge_l": entry.rouge_l if entry.rouge_l is not None else "",
+        "bert_score_f1": entry.bert_score_f1 if entry.bert_score_f1 is not None else "",
         "prompt_tokens": entry.prompt_tokens if entry.prompt_tokens is not None else "",
         "response_tokens": entry.response_tokens if entry.response_tokens is not None else "",
         "telemetry": json.dumps(entry.telemetry or {}),
         "response": entry.response.replace("\n", " ").strip(),
+        "query_embedding": json.dumps(entry.query_embedding) if entry.query_embedding else "",
+        "retrieved_vectors": json.dumps(entry.retrieved_vectors) if entry.retrieved_vectors else "",
     }
 
     file_exists = os.path.exists(EXPERIMENT_LOG)
-    fieldnames = list(row.keys())
+    fieldnames = EXPERIMENT_LOG_COLUMNS
+    ensure_experiment_log_schema(fieldnames)
     try:
         with open(EXPERIMENT_LOG, "a", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -932,6 +1066,7 @@ def run_diagnosis(req: ChatRequest):
     telemetry_snapshot = {}
     instructions_block = ""
     response_format_block = ""
+    vector_debug: dict = {}
 
     if req.instructions:
         instructions_block = "\n=== INSTRUÇÕES OPERACIONAIS ===\n" + "\n".join(req.instructions) + "\n"
@@ -965,6 +1100,8 @@ def run_diagnosis(req: ChatRequest):
     # RAG Dinâmico (Telemetria)
     if req.scenario == 3:
         telemetry_part, telemetry_snapshot = build_telemetry_section(req.telemetry, telemetry_keys)
+
+    vector_debug = build_vector_debug(req.question, retrieved_chunks, retrieved_metadatas, embedding_model)
 
     # Montagem do Prompt Final
     final_prompt = (
@@ -1006,6 +1143,9 @@ def run_diagnosis(req: ChatRequest):
         "telemetry_signals": telemetry_keys,
     }
 
+    if vector_debug:
+        payload["vector_debug"] = vector_debug
+
     if req.debug:
         payload["debug"] = {
             "final_prompt": final_prompt,
@@ -1032,5 +1172,7 @@ def run_diagnosis(req: ChatRequest):
                 "response": response_tokens,
             },
         }
+        if vector_debug:
+            payload["debug"]["vector_debug"] = vector_debug
 
     return payload
