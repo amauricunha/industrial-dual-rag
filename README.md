@@ -193,6 +193,21 @@ Recommended Trio
 - Utilize o arquivo `docs/gabarito.md`, que traz respostas derivadas do **Manual de Operação e Manutenção – ROMI T 240** para os cenários Normal, Falha Térmica e Desbalanceamento. Basta copiar o trecho do cenário correspondente para o campo da UI antes de rodar o teste.
 - Se adicionar novas falhas ou traduzir o manual, edite o arquivo mantendo a estrutura "Estado geral → Evidências → Ações" para preservar a consistência estatística.
 
+### Estratégia para comparar LLMs x encoders
+
+- O gabarito avalia exclusivamente a **resposta final do LLM**, portanto funciona com qualquer provedor (Groq, Gemini, Ollama) e é independente do backend ou do modelo de embedding escolhido. Se a resposta mencionar os limites corretos ("parar imediatamente", valores numéricos etc.) a métrica sobe; se o modelo divagar, a métrica cai.
+- O modelo de embedding (encoder) influencia apenas **quais chunks são recuperados**. Ao trocar o encoder e reindexar, você muda o contexto estático entregue ao LLM; o backend vetorial continua sendo apenas o repositório dos vetores.
+- Para avaliar somente backends, mantenha o encoder fixo e reindexe cada banco (Chroma, FAISS, Weaviate, Pinecone). Para avaliar encoders, troque o nome no campo "Modelo de embedding", reindexe e mantenha o backend fixo. Para avaliar LLMs, mantenha encoder + backend constantes e troque apenas o provedor.
+- Expectativa com encoder `all-MiniLM-L6-v2` e telemetria crítica:
+    - **Gemini 1.5/2.5 Flash**: respostas longas, cita limites e protocolos, tende a aderir quase literal ao gabarito.
+    - **Groq Llama3-70B**: estilo mais conciso, ainda assim com alta accuracy ao citar os mesmos limites.
+    - **Ollama Llama3.2 3B**: modelo menor, costuma resumir e pode perder detalhes, permitindo evidenciar a diferença para os externos.
+- Passo a passo recomendado para o experimento comparativo:
+    1. Fixe o encoder (ou execute um ciclo completo por encoder desejado, sempre reindexando antes de medir).
+    2. Rode os três provedores LLM no mesmo cenário, colando o gabarito correspondente no campo da UI.
+    3. Compare accuracy/BLEU/ROUGE/latência em `data/api/experiment_logs.csv` e use "📊 Gerar resumo automático" para visualizar os resultados.
+    4. Quando o objetivo for isolar o backend, repita os cenários após reprocessar a base para cada armazenamento.
+
 ## Limitações Operacionais
 
 - **Broker MQTT público:** o padrão (`test.mosquitto.org`) não oferece SLA, podendo sofrer quedas ou limitação de mensagens. Para medições consistentes, substitua por um broker privado (Eclipse Mosquitto local ou serviço gerenciado) e atualize as variáveis `MQTT_*` no `.env`.

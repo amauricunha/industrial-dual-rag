@@ -26,6 +26,7 @@ from rouge_score import rouge_scorer
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
 logger = logging.getLogger("web-app")
+LOG_MQTT_EVENTS = os.getenv("LOG_MQTT_EVENTS", "true").lower() == "true"
 
 def env_or_default(*keys, default=None):
     for key in keys:
