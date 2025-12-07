@@ -209,3 +209,7 @@ __marimo__/
 # Runtime data (uploads, índices, logs, resumos)
 #data/
 #!data/.gitkeep
+
+# outros
+.DS_Store
+thumbs.db
