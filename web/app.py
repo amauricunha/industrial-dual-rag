@@ -141,6 +141,14 @@ if "last_summary_meta" not in st.session_state:
     st.session_state.last_summary_meta = None
 if "telemetry_signals" not in st.session_state:
     st.session_state.telemetry_signals = TELEMETRY_SIGNAL_DEFAULTS.copy()
+if "bert_scorer_ready" not in st.session_state:
+    with st.spinner("Carregando modelo de métrica semântica (BERTScore)..."):
+        try:
+            get_bert_scorer()
+            st.session_state.bert_scorer_ready = True
+        except Exception as exc:
+            st.session_state.bert_scorer_ready = False
+            st.warning(f"Falha ao carregar BERTScore: {exc}")
     
 @st.cache_resource
 def get_mqtt_queue() -> Queue:

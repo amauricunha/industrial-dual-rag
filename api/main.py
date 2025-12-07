@@ -213,20 +213,27 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
     df.tail(recent_count).to_csv(recent_csv_path, index=False)
 
     charts = {}
-    if not summary.empty and {"accuracy", "mode_used"}.issubset(summary.columns):
-        fig_acc = px.bar(
+
+    def build_bar_chart(metric: str, title: str, filename: str, y_label: str):
+        if summary.empty or metric not in summary.columns:
+            return
+        fig = px.bar(
             summary,
             x="mode_used",
-            y="accuracy",
+            y=metric,
             color="scenario" if "scenario" in summary.columns else None,
             barmode="group",
-            title="Accuracy médio por cenário",
+            title=title,
         )
-        fig_acc.update_xaxes(title_text="Modo")
-        fig_acc.update_yaxes(title_text="Accuracy médio")
-        accuracy_path = output_dir_path / "accuracy_by_mode.html"
-        fig_acc.write_html(accuracy_path)
-        charts["accuracy"] = str(accuracy_path)
+        fig.update_xaxes(title_text="Modo")
+        fig.update_yaxes(title_text=y_label)
+        chart_path = output_dir_path / filename
+        fig.write_html(chart_path)
+        charts[metric] = str(chart_path)
+
+    build_bar_chart("accuracy", "Accuracy médio por cenário", "accuracy_by_mode.html", "Accuracy médio")
+    build_bar_chart("bert_score_f1", "BERTScore F1 médio por cenário", "bert_score_by_mode.html", "BERTScore F1")
+    build_bar_chart("bleu", "BLEU médio por cenário", "bleu_by_mode.html", "BLEU")
 
     if "latency_ms" in df.columns:
         latency_x = "mode_used" if "mode_used" in df.columns else None
@@ -243,6 +250,25 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
         latency_path = output_dir_path / "latency_distribution.html"
         fig_latency.write_html(latency_path)
         charts["latency"] = str(latency_path)
+
+    if "bert_score_f1" in df.columns:
+        history_df = df.dropna(subset=["bert_score_f1"]).copy()
+        if not history_df.empty:
+            history_df = history_df.sort_values("timestamp")
+            color_key = "llm_provider" if "llm_provider" in history_df.columns else None
+            fig_history = px.line(
+                history_df,
+                x="timestamp",
+                y="bert_score_f1",
+                color=color_key,
+                line_group="scenario" if "scenario" in history_df.columns else None,
+                markers=True,
+                title="Histórico de BERTScore F1",
+            )
+            fig_history.update_yaxes(title_text="BERTScore F1")
+            history_path = output_dir_path / "bert_score_history.html"
+            fig_history.write_html(history_path)
+            charts["bert_score_f1_history"] = str(history_path)
 
     metadata_path = output_dir_path / "summary_metadata.json"
     metadata = {
