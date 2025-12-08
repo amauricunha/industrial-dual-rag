@@ -52,7 +52,7 @@
 - Screenshots da UI (sidebar + painel de diagnóstico + botão de resumo).
 
 ## 9. Limitações & Próximos Passos
-- Broker MQTT público sem SLA → migrar para broker privado com QoS.
+- Broker MQTT sem SLA → migrar para broker com QoS.
 - Rate limit das APIs Groq/Gemini → manter fallback local e implementar fila de requisições.
 - Cada backend vetorial requer reindex = pretende-se sincronizar automaticamente.
 - Expandir sensores (rotação, pressão) e adicionar aprendizado ativo.
@@ -66,3 +66,27 @@
 - Normas ISO 10816 / ISO 20816.
 - Documentação Groq, Google AI Studio, Ollama.
 - Trabalhos correlatos de RAG industrial (citar papers selecionados).
+
+
+## OBS
+
+Explaining build_vector_debug in api/main.py
+No backend da API, tudo isso está concentrado em main.py.
+
+A função build_vector_debug fica por volta da linha 260 do arquivo. Ela recebe a pergunta, os chunks retornados pelo backend (já limitados pelo top_k=3), os metadados e o nome do modelo de embedding. Dentro dela:
+
+Reusa o embedder HuggingFaceEmbeddings para gerar o vetor da pergunta (embed_query) e de cada chunk (embed_documents).
+Calcula a similaridade cosseno manualmente (cosine_similarity definido um pouco acima), para cada chunk recuperado.
+Monta uma lista chamada retrieved com index, source, similarity, chunk_preview e o vetor completo do chunk (clippado depois na UI).
+Retorna um dicionário com embedding_model, metric (sempre cosine), o vetor da pergunta (query_embedding) e a lista retrieved.
+A função é chamada logo após a recuperação dos chunks, dentro de run_diagnosis:
+
+Esse vector_debug é incluído no payload de resposta e, se o usuário marcar “Gerar logs detalhados”, vê o bloco inteiro na interface (com a visualização slice dos vetores). Se log_experiments estiver ligado, os campos query_embedding e retrieved_vectors vão para experiment_logs.csv (como JSON), permitindo reconstruir depois quais trechos foram usados.
+
+Como isso funciona especificamente no Chroma:
+
+query_backend (mesmo arquivo) monta um cliente PersistentClient apontando para a pasta data/chromadb. Ao criar ou reabrir a coleção industrial_manuals, usamos SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2").
+Durante a indexação (upsert_chunks_to_backend), cada chunk recebe um ID e metadados (fonte, chunk_size, etc.) e é inserido via collection.upsert.
+Na consulta (collection.query(query_texts=[question], n_results=3)), o Chroma gera embeddings com a mesma função e retorna as três melhores correspondências com base em cosseno (padrão). Ele já traz documents e metadatas.
+Em seguida build_vector_debug reconta essa mesma história, mas guardando os vetores em JSON para auditoria (algo que o Chroma não retorna direto).
+Então, para explicar em uma apresentação: foque em query_backend → Chroma (cosine similarity, top‑k=3) → build_vector_debug para registrar “como” o chunk foi escolhido (vetores e similaridade). Se quiser ajustar algo (ex.: mudar top‑k, trocar métrica, limitar preview), é nesse combo de funções em main.py que você mexe.

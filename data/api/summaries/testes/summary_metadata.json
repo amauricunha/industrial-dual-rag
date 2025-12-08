@@ -1,0 +1,19 @@
+{
+  "generated_at": "2025-12-08T11:56:17.421614+00:00",
+  "record_count": 28,
+  "summary_rows": 3,
+  "recent_window": 28,
+  "output_dir": "/app/data/summaries",
+  "artifacts": {
+    "summary_csv": "/app/data/summaries/summary_metrics.csv",
+    "recent_samples_csv": "/app/data/summaries/recent_samples.csv",
+    "charts": {
+      "accuracy": "/app/data/summaries/accuracy_by_mode.html",
+      "bert_score_f1": "/app/data/summaries/bert_score_by_mode.html",
+      "bleu": "/app/data/summaries/bleu_by_mode.html",
+      "rouge_l": "/app/data/summaries/rouge_by_mode.html",
+      "latency": "/app/data/summaries/latency_distribution.html",
+      "bert_score_f1_history": "/app/data/summaries/bert_score_history.html"
+    }
+  }
+}
