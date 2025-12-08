@@ -155,11 +155,29 @@ def get_mqtt_queue() -> Queue:
     return Queue()
 
 
+def _instantiate_bert_scorer(target_model: str) -> BERTScorer:
+    """Tenta carregar o BERTScore usando baseline; se não existir, executa sem rescale."""
+
+    try:
+        return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
+    except KeyError:
+        logger.warning(
+            "Modelo %s não possui baseline oficial no BERTScore; prosseguindo sem rescale.",
+            target_model,
+        )
+        return BERTScorer(
+            lang=None,
+            model_type=target_model,
+            rescale_with_baseline=False,
+            num_layers=12,
+        )
+
+
 @st.cache_resource
 def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
     target_model = model_name or BERT_SCORE_FALLBACK_MODEL
     try:
-        return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
+        return _instantiate_bert_scorer(target_model)
     except Exception as exc:
         if target_model == BERT_SCORE_FALLBACK_MODEL:
             raise
@@ -169,7 +187,7 @@ def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
             exc,
             BERT_SCORE_FALLBACK_MODEL,
         )
-        return BERTScorer(lang="pt", model_type=BERT_SCORE_FALLBACK_MODEL, rescale_with_baseline=True)
+        return _instantiate_bert_scorer(BERT_SCORE_FALLBACK_MODEL)
 
 def build_mqtt_client():
     try:

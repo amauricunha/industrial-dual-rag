@@ -1,0 +1,1702 @@
+scenario,scenario_name,mode_id,mode_label,uses_retrieval,uses_telemetry,vector_backend,llm_provider,response,latency_ms,accuracy,bleu,rouge_l,bert_score_f1
+1,Operação Normal,1,Baseline (LLM Puro),False,False,none,groq,"{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar análise sem dados""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar análise sem dados""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar análise sem dados""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar análise sem dados""
+    }
+  },
+  ""diagnostico_resumido"": ""Não é possível realizar diagnóstico sem telemetria"",
+  ""causas_provaveis"": [
+    ""Falta de dados de telemetria""
+  ],
+  ""acoes_recomendadas"": [
+    ""Fornecer telemetria para análise"",
+    ""Consultar o manual do usuário da ROMI T 240 para entender os parâmetros de operação normais""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""Não especificado"",
+      ""fonte_contexto"": ""Manual do usuário da ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""Não é possível realizar análise sem telemetria. É necessário fornecer os dados de telemetria para realizar uma avaliação precisa do estado da máquina."",
+  ""trechos_utilizados"": [
+    ""Não há trechos utilizados devido à falta de contexto e telemetria""
+  ]
+}",1305.472166990512,0.0,55.203811119081294,28.373702422145325,78.15498113632202
+1,Operação Normal,1,Baseline (LLM Puro),False,False,none,gemini,"```json
+{
+  ""estado_geral"": ""FALHA_DE_DIAGNOSTICO"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""N/A"",
+      ""analise"": ""Nenhuma telemetria de temperatura foi fornecida para análise.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""N/A"",
+      ""analise"": ""Nenhuma telemetria de vibração RMS foi fornecida para análise.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""N/A"",
+      ""analise"": ""Nenhuma telemetria de corrente do motor foi fornecida para análise.""
+    },
+    ""rpm"": {
+      ""valor"": ""N/A"",
+      ""analise"": ""Nenhuma telemetria de RPM foi fornecida para análise.""
+    }
+  },
+  ""diagnostico_resumido"": ""Impossível realizar um diagnóstico preciso do estado atual da máquina ROMI T 240 devido à ausência total de dados de telemetria e contexto técnico específico (como limites operacionais do manual)."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Iniciar a coleta e registro contínuo dos dados de telemetria cruciais (temperatura, vibração RMS, corrente do motor, RPM, etc.)."",
+    ""Consultar o manual de operação e manutenção do torno ROMI T 240 para estabelecer os limites operacionais e de alarme para cada variável (ex: 'Manual ROMI T 240, Seção 3.2 - Especificações Técnicas e Limites Operacionais')."",
+    ""Verificar a integridade e funcionamento dos sensores de telemetria instalados na máquina para garantir a precisão dos dados futuros."",
+    ""Com base nos dados coletados, agendar uma nova avaliação diagnóstica.""
+  ],
+  ""limites_referenciados"": [],
+  ""justificativa"": ""O estado foi classificado como 'FALHA_DE_DIAGNOSTICO' porque não foi possível realizar qualquer avaliação ou diagnóstico da ROMI T 240 devido à ausência completa de telemetria e de contexto técnico específico (como limites numéricos de referência do manual). Sem dados, qualquer análise seria especulativa e contra as instruções de não inventar valores ausentes. As ações recomendadas focam na obtenção das informações necessárias para um diagnóstico futuro."",
+  ""trechos_utilizados"": []
+}
+```",6633.137041993905,0.0,34.32779172287839,19.806763285024154,72.2890317440033
+1,Operação Normal,2,RAG (Docs),True,False,chroma,groq,"Como não foram fornecidos valores específicos de telemetria, não é possível realizar uma análise detalhada do estado atual da máquina. No entanto, posso fornecer uma estrutura de resposta baseada nas informações disponíveis no manual e nas instruções fornecidas.
+
+```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    }
+  },
+  ""diagnostico_resumido"": ""Não é possível realizar um diagnóstico sem dados de telemetria."",
+  ""causas_provaveis"": [
+    ""Falta de dados de telemetria""
+  ],
+  ""acoes_recomendadas"": [
+    ""Verificar o nível de óleo de lubrificação"",
+    ""Inspecionar o funcionamento do transportador de cavacos"",
+    ""Verificar a pressão do ar comprimido"",
+    ""Realizar uma inspeção visual para identificar ruídos anormais""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""Até 2.8 mm/s"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""Devido à falta de dados de telemetria, não é possível realizar uma análise detalhada do estado da máquina."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2"",
+    ""Manual de Operação e Manutenção - ROMI T 240, Revisão Técnica 2025.1""
+  ]
+}
+```
+
+Para uma análise precisa, é necessário ter acesso aos dados de telemetria atuais da máquina, como temperatura, vibração RMS, corrente do motor e rotações por minuto (RPM). Com esses dados, seria possível comparar com os limites estabelecidos no manual e fornecer um diagnóstico mais acurado, junto com recomendações específicas de manutenção.",1996.686166006839,0.0,43.450365523653026,28.57142857142857,79.47616577148438
+1,Operação Normal,2,RAG (Docs),True,False,chroma,gemini,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de temperatura para avaliação. Sem dados, não é possível comparar com a faixa operacional normal (25°C a 65°C), alerta (66°C a 89°C) ou crítica (> 90°C) para o eixo-árvore (Referência: MANUAL, 1.1).""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de vibração RMS para avaliação. Sem dados, não é possível classificar a severidade da vibração em relação às zonas ISO 20816 (A: 0.0-2.5 mm/s, B: 2.6-4.5 mm/s, C: 4.6-9.9 mm/s, D: ≥ 10.0 mm/s) (Referência: MANUAL, 1.2).""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de corrente do motor para avaliação. Sem dados, não é possível determinar se a corrente está dentro da faixa típica de 10 A a 18 A para ciclo nominal (Referência: Manual Operacional Resumido, Seção 4.2).""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de RPM para avaliação. Sem este dado, não é possível correlacionar com vibrações ou outros parâmetros de operação.""
+    }
+  },
+  ""diagnostico_resumido"": ""Impossível realizar um diagnóstico preciso sem dados de telemetria. A classificação como 'NORMAL' é uma suposição baseada na ausência de indicadores de falha, mas não é um diagnóstico conclusivo."",
+  ""causas_provaveis"": [
+    ""Não é possível determinar causas prováveis sem dados de telemetria ou sintomas específicos.""
+  ],
+  ""acoes_recomendadas"": [
+    ""Implementar ou verificar o sistema de telemetria para garantir a coleta e o registro contínuo de dados de temperatura do eixo-árvore, vibração RMS, corrente do motor e RPM."",
+    ""Realizar o checklist de manutenção preventiva diária, incluindo a verificação do nível do óleo de lubrificação, pressão do ar comprimido (Min 5 Bar), funcionamento do transportador de cavacos e inspeção de ruídos anormais durante o warm-up (Referência: MANUAL, 3)."",
+    ""Documentar rigorosamente as leituras de telemetria por turno, uma vez que o sistema de monitoramento esteja operante (Referência: Manual Operacional Resumido, Recomendações Gerais).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura Spindle/Eixo-Árvore (Normal)"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""MANUAL, 1.1""
+    },
+    {
+      ""variavel"": ""Temperatura Spindle/Eixo-Árvore (Alerta)"",
+      ""limite"": ""66°C a 89°C"",
+      ""fonte_contexto"": ""MANUAL, 1.1""
+    },
+    {
+      ""variavel"": ""Temperatura Spindle/Eixo-Árvore (Crítico)"",
+      ""limite"": ""> 90°C"",
+      ""fonte_contexto"": ""MANUAL, 1.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona A - Excelente)"",
+      ""limite"": ""0.0 a 2.5 mm/s"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona B - Aceitável)"",
+      ""limite"": ""2.6 a 4.5 mm/s"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona C - Insatisfatório/Alerta)"",
+      ""limite"": ""4.6 a 9.9 mm/s"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona D - Inaceitável/DANO IMINENTE)"",
+      ""limite"": ""≥ 10.0 mm/s"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Corrente de armadura (Típica em ciclo nominal)"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Pressão do ar comprimido (Mínima)"",
+      ""limite"": ""5 Bar"",
+      ""fonte_contexto"": ""MANUAL, 3""
+    }
+  ],
+  ""justificativa"": ""A classificação como 'NORMAL' é meramente nominal e hipotética devido à completa ausência de dados de telemetria para análise, conforme explicitado por 'TELEMETRIA NÃO FORNECIDA NESTE MODO'. Sem valores atuais de temperatura, vibração RMS, corrente do motor e RPM, não é possível, como Engenheiro Sênior de Diagnóstico, realizar uma avaliação técnica precisa e fundamentada nos limites operacionais e normas referenciadas (ISO 20816-1:2016 / ISO 20816-21:2025). A análise diagnóstica depende criticamente de dados empíricos para identificar desvios e diagnosticar falhas. A principal recomendação é restabelecer a coleta e o monitoramento da telemetria para permitir uma avaliação adequada do estado da máquina."",
+  ""trechos_utilizados"": [
+    ""TELEMETRIA NÃO FORNECIDA NESTE MODO"",
+    ""1.1 Monitoramento Térmico (Spindle/Eixo-Árvore)"",
+    ""1.2 Monitoramento de Vibração (Baseado na ISO 20816)"",
+    ""2.1 Código de Erro: OVERHEAT (Alta Temperatura)"",
+    ""2.2 Código de Erro: HIGH_VIB (Vibração Crítica)"",
+    ""3. CHECKLIST DE MANUTENÇÃO PREVENTIVA (DIÁRIO)"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 – Operação Normal"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Recomendações Gerais""
+  ]
+}
+```",21286.52975001023,0.0,18.913294694344668,16.178194607268466,73.35553765296936
+1,Operação Normal,2,RAG (Docs),True,False,simple,groq,"Como não foi fornecida a telemetria específica da máquina, não é possível realizar uma análise detalhada do estado atual da máquina. No entanto, posso fornecer uma resposta baseada nas informações gerais do manual e nas instruções fornecidas.
+
+```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar a análise sem a telemetria""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar a análise sem a telemetria""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar a análise sem a telemetria""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível realizar a análise sem a telemetria""
+    }
+  },
+  ""diagnostico_resumido"": ""Não é possível realizar o diagnóstico sem a telemetria"",
+  ""causas_provaveis"": [
+    ""Não é possível determinar as causas prováveis sem a telemetria""
+  ],
+  ""acoes_recomendadas"": [
+    ""Realizar a leitura da telemetria"",
+    ""Verificar o nível de óleo de lubrificação"",
+    ""Verificar a pressão do ar comprimido"",
+    ""Verificar o funcionamento do transportador de cavacos""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""até 2.8 mm/s"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""Não é possível realizar a justificativa sem a telemetria"",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3""
+  ]
+}
+```
+
+É importante lembrar que, para uma análise mais precisa, é necessário ter acesso à telemetria específica da máquina. Além disso, é fundamental seguir as recomendações gerais de manutenção preventiva e realizar a leitura da telemetria regularmente para garantir a segurança e a eficiência da máquina.",2068.245707996539,0.0,40.5710407849232,28.571428571428577,78.05415391921997
+1,Operação Normal,2,RAG (Docs),True,False,simple,gemini,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de temperatura. Para um diagnóstico preciso, é essencial monitorar este parâmetro.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de vibração RMS. A avaliação da condição de vibração requer dados para comparação com os limites da norma ISO 20816.""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de corrente do motor. Este dado é crucial para identificar sobrecarga ou problemas elétricos/mecânicos.""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Não foi fornecida telemetria de RPM. A rotação do eixo-árvore impacta diretamente outros parâmetros como vibração e temperatura.""
+    }
+  },
+  ""diagnostico_resumido"": ""Sem dados de telemetria em tempo real, o estado operacional não pode ser determinado com precisão. Assumindo operação 'NORMAL' na ausência de alarmes, mas é fundamental implementar monitoramento contínuo conforme as recomendações do manual."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Iniciar o registro e a documentação das leituras de telemetria por turno para estabelecer um baseline e identificar tendências anormais (Manual Operacional Resumido, Recomendações Gerais)."",
+    ""Realizar o checklist de manutenção preventiva diária, incluindo a verificação do nível do óleo de lubrificação de barramento (Tanque Lubrifil), pressão do ar comprimido (mínimo 5 Bar) e funcionamento do transportador de cavacos (MANUAL, 3)."",
+    ""Inspecionar a máquina quanto a ruídos anormais durante a rotação do fuso em vazio (Warm-up) (MANUAL, 3)."",
+    ""Garantir que a temperatura do cabeçote esteja dentro da faixa recomendada de 25°C a 65°C antes da operação contínua (Manual Operacional Resumido, Seção 4.2).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do Spindle/Eixo-Árvore (Normal)"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""MANUAL, 1.1 / Manual Operacional Resumido, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Temperatura do Spindle/Eixo-Árvore (Alerta)"",
+      ""limite"": ""66°C a 89°C"",
+      ""fonte_contexto"": ""MANUAL, 1.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Aceitável - Zona B)"",
+      ""limite"": ""2.6 a 4.5 mm/s RMS"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Inaceitável - Zona D)"",
+      ""limite"": ""≥ 10.0 mm/s RMS"",
+      ""fonte_contexto"": ""MANUAL, 1.2""
+    },
+    {
+      ""variavel"": ""Corrente de armadura (Típica)"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""A classificação como 'NORMAL' é uma inferência baseada na ausência de qualquer telemetria que indique um estado de 'ALERTA' ou 'FALHA'. No entanto, sem dados de telemetria, não é possível realizar uma avaliação diagnóstica precisa ou identificar causas prováveis específicas. As ações recomendadas focam em implementar o monitoramento e seguir os procedimentos de manutenção preventiva diária para garantir que o estado 'NORMAL' seja validado e mantido. O manual enfatiza a importância de documentar leituras de telemetria para um acompanhamento eficaz."",
+  ""trechos_utilizados"": [
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.1 Monitoramento Térmico (Spindle/Eixo-Árvore)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.2 Monitoramento de Vibração (Baseado na ISO 20816)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 3. CHECKLIST DE MANUTENÇÃO PREVENTIVA (DIÁRIO)"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 – Operação Normal"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Recomendações Gerais""
+  ]
+}
+```",12583.398999995552,0.0,25.180141733944687,19.174041297935105,70.13826370239258
+1,Operação Normal,3,Dual RAG (Docs + Sensores),True,True,chroma,groq,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""45.0"",
+      ""analise"": ""Dentro da faixa ideal de trabalho e estabilidade térmica (25°C a 65°C)""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""2.4"",
+      ""analise"": ""Excelente, dentro da Zona A da ISO 20816 (0.0 a 2.5 mm/s)""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""13.0"",
+      ""analise"": ""Dentro do ciclo nominal (10 A a 18 A)""
+    },
+    ""rpm"": {
+      ""valor"": ""1200"",
+      ""analise"": ""Não há informações específicas sobre o limite de RPM no manual, mas está dentro de operação normal""
+    }
+  },
+  ""diagnostico_resumido"": ""A máquina está operando dentro dos parâmetros normais de temperatura, vibração, corrente e rotação."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Continuar monitorando os parâmetros de telemetria"",
+    ""Realizar manutenção preventiva diária conforme checklist""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""0.0 a 2.5 mm/s (Zona A – ISO 20816)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""A máquina está dentro dos parâmetros normais de operação, portanto, não há necessidade de intervenção corretiva imediata."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2"",
+    ""Manual de Operação e Manutenção - ROMI T 240, Revisão Técnica 2025.1""
+  ]
+}
+```",1750.6403750012396,0.0,51.31863200192734,46.41833810888253,84.21319127082825
+1,Operação Normal,3,Dual RAG (Docs + Sensores),True,True,chroma,gemini,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""45.0 °C"",
+      ""analise"": ""A temperatura do eixo-árvore de 45.0 °C está dentro da faixa operacional ideal e estável de 25°C a 65°C, conforme as especificações do manual.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""2.4 mm/s RMS"",
+      ""analise"": ""A vibração RMS de 2.4 mm/s encontra-se na Zona A (Excelente) da norma ISO 20816, que classifica valores entre 0.0 e 2.5 mm/s RMS. Este valor também está abaixo do limite aceitável de 2.8 mm/s para operação contínua.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""13.0 A"",
+      ""analise"": ""A corrente de armadura do motor de 13.0 A está dentro da faixa típica em ciclo nominal, que é de 10 A a 18 A.""
+    },
+    ""rpm"": {
+      ""valor"": ""1200 RPM"",
+      ""analise"": ""O valor de 1200 RPM está dentro dos parâmetros operacionais esperados. O contexto fornecido não indica limites específicos para RPM que possam classificar este valor como anormal para a operação atual.""
+    }
+  },
+  ""diagnostico_resumido"": ""O torno ROMI T 240 está operando em um estado NORMAL, com todos os parâmetros de telemetria (temperatura, vibração RMS, corrente do motor e RPM) dentro das faixas ideais e aceitáveis conforme as especificações do fabricante e normas aplicáveis. Não há sinais de anomalias ou necessidades de intervenção corretiva urgente."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Continuar o monitoramento de telemetria conforme a rotina operacional."",
+    ""Realizar o checklist de manutenção preventiva diária, que inclui verificar o nível do óleo de lubrificação de barramento, a pressão do ar comprimido (mínimo 5 Bar), o funcionamento do transportador de cavacos e ausência de ruídos anormais durante a rotação do fuso em vazio (warm-up). (REF: Manual de Operação e Manutenção - ROMI T 240, Seção 3)"",
+    ""Documentar as leituras de telemetria por turno para acompanhamento histórico e detecção precoce de tendências. (REF: Manual Operacional Resumido – Torno ROMI T 240, Recomendações Gerais)""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""temperatura"",
+      ""limite"": ""25°C a 65°C (Normal)"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 1.1; Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""vibracao_rms"",
+      ""limite"": ""0.0 a 2.5 mm/s RMS (Zona A - Excelente)"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 1.2 (ISO 20816); Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""corrente_motor"",
+      ""limite"": ""10 A a 18 A (Típica em ciclo nominal)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""Com base na análise da telemetria, todos os parâmetros monitorados estão dentro das faixas consideradas 'Normal' ou 'Excelente' pelos manuais de operação e manutenção do ROMI T 240. A temperatura do eixo-árvore (45.0 °C) está na faixa ideal. A vibração RMS (2.4 mm/s) está na Zona A (Excelente) da ISO 20816, indicando excelente condição. A corrente do motor (13.0 A) também se encontra dentro dos limites típicos de operação. Portanto, não há evidências que justifiquem um estado de alerta ou falha."",
+  ""trechos_utilizados"": [
+    ""1.1 Monitoramento Térmico (Spindle/Eixo-Árvore) ... Normal (Verde) 25°C a 65°C Faixa ideal de trabalho e estabilidade térmica."",
+    ""1.2 Monitoramento de Vibração (Baseado na ISO 20816) ... Zona ISO A Faixa (mm/s RMS) 0.0 a 2.5 Avaliação Excelente Máquina nova ou recém-reformada."",
+    ""Seção 4.2 – Operação Normal - Temperatura recomendada do cabeçote: 25 °C a 65 °C."",
+    ""Seção 4.2 – Operação Normal - Vibração RMS aceitável: até 2.8 mm/s para operação contínua (Zona A – ISO 20816)."",
+    ""Seção 4.2 – Operação Normal - Corrente de armadura típica em ciclo nominal: 10 A a 18 A."",
+    ""3. CHECKLIST DE MANUTENÇÃO PREVENTIVA (DIÁRIO)"",
+    ""Recomendações Gerais - Documentar leituras de telemetria por turno.""
+  ]
+}
+```",18807.91470799886,0.0,23.091139632168204,22.49690976514215,75.77693462371826
+1,Operação Normal,3,Dual RAG (Docs + Sensores),True,True,simple,groq,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""45.0"",
+      ""analise"": ""Dentro da faixa ideal de trabalho e estabilidade térmica (25°C a 65°C)""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""2.4"",
+      ""analise"": ""Excelente, dentro da Zona A da norma ISO 20816 (0.0 a 2.5 mm/s)""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""13.0"",
+      ""analise"": ""Dentro do ciclo nominal (10 A a 18 A)""
+    },
+    ""rpm"": {
+      ""valor"": ""1200"",
+      ""analise"": ""Não há informações específicas sobre o limite de RPM no manual, mas está dentro de parâmetros operacionais normais""
+    }
+  },
+  ""diagnostico_resumido"": ""A máquina está operando dentro dos parâmetros normais de temperatura, vibração, corrente e rotação."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Manter o monitoramento contínuo dos parâmetros de telemetria"",
+    ""Realizar a manutenção preventiva diária conforme o checklist""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""0.0 a 2.5 mm/s"",
+      ""fonte_contexto"": ""Norma ISO 20816, Zona A""
+    }
+  ],
+  ""justificativa"": ""A máquina está operando dentro dos parâmetros normais de temperatura, vibração, corrente e rotação, não há necessidade de intervenção corretiva imediata."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2"",
+    ""Norma ISO 20816, Zona A""
+  ]
+}
+```",1664.0010830014944,0.0,53.07398352104026,49.41176470588235,84.93178486824036
+1,Operação Normal,3,Dual RAG (Docs + Sensores),True,True,simple,gemini,"```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""45.0"",
+      ""analise"": ""A temperatura do eixo-árvore de 45.0°C está dentro da faixa operacional ideal de 25°C a 65°C, conforme o Monitoramento Térmico (Spindle/Eixo-Árvore) e a Seção 4.2 do Manual Operacional Resumido.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""2.4"",
+      ""analise"": ""A vibração RMS de 2.4 mm/s se enquadra na Zona A (0.0 a 2.5 mm/s RMS), classificada como 'Excelente' e indicativa de uma máquina nova ou recém-reformada, de acordo com a ISO 20816 na Seção 1.2. Este valor está abaixo do limite aceitável de 2.8 mm/s para operação contínua (Seção 4.2, Manual Operacional Resumido).""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""13.0"",
+      ""analise"": ""A corrente do motor de 13.0 A está dentro da faixa típica de 10 A a 18 A para ciclo nominal, conforme indicado na Seção 4.2 do Manual Operacional Resumido.""
+    },
+    ""rpm"": {
+      ""valor"": ""1200"",
+      ""analise"": ""A RPM de 1200 é um valor operacional. Não há limites específicos de alerta ou falha relacionados diretamente à RPM fornecidos no contexto, e os outros parâmetros de telemetria não indicam anomalias para esta rotação.""
+    }
+  },
+  ""diagnostico_resumido"": ""O Torno ROMI T 240 está operando dentro dos limites normais e excelentes para temperatura, vibração e corrente do motor, indicando um estado operacional saudável e sem anomalias."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Continuar o monitoramento regular dos parâmetros de telemetria, documentando as leituras por turno (Recomendações Gerais, Manual Operacional Resumido – Torno ROMI T 240)."",
+    ""Realizar as verificações diárias de manutenção preventiva, incluindo o nível do óleo de lubrificação de barramento, pressão do ar comprimido, funcionamento do transportador de cavacos e ruídos anormais durante a rotação do fuso em vazio (Seção 3, Checklist de Manutenção Preventiva (Diário), MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do Eixo-Árvore (Faixa Normal)"",
+      ""limite"": ""25°C a 65°C"",
+      ""fonte_contexto"": ""Seção 1.1, Monitoramento Térmico (Spindle/Eixo-Árvore), MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona A - Excelente)"",
+      ""limite"": ""0.0 a 2.5 mm/s RMS"",
+      ""fonte_contexto"": ""Seção 1.2, Monitoramento de Vibração (Baseado na ISO 20816), MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Aceitável para operação contínua)"",
+      ""limite"": ""até 2.8 mm/s"",
+      ""fonte_contexto"": ""Seção 4.2, Operação Normal, Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    {
+      ""variavel"": ""Corrente de Armadura Típica em Ciclo Nominal"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Seção 4.2, Operação Normal, Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""Todas as leituras de telemetria fornecidas (temperatura do eixo-árvore, vibração RMS e corrente do motor) estão dentro das faixas consideradas normais ou excelentes conforme as especificações detalhadas no 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1' e no 'Manual Operacional Resumido – Torno ROMI T 240'. Não há evidências que justifiquem um estado de alerta ou falha para o equipamento."",
+  ""trechos_utilizados"": [
+    ""Normal (Verde) 25°C a 65°C Faixa ideal de trabalho e estabilidade térmica. (Seção 1.1, MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1)"",
+    ""Temperatura recomendada do cabeçote: 25 °C a 65 °C. (Seção 4.2, Manual Operacional Resumido – Torno ROMI T 240)"",
+    ""A 0.0 a 2.5 Excelente Máquina nova ou recém-reformada. (Seção 1.2, MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1)"",
+    ""Vibração RMS aceitável: até 2.8 mm/s para operação contínua (Zona A – ISO 20816). (Seção 4.2, Manual Operacional Resumido – Torno ROMI T 240)"",
+    ""Corrente de armadura típica em ciclo nominal: 10 A a 18 A. (Seção 4.2, Manual Operacional Resumido – Torno ROMI T 240)"",
+    ""Antes de iniciar o turno, o operador deve verificar: [...] Nível do óleo de lubrificação de barramento [...] Pressão do ar comprimido [...] Funcionamento do transportador de cavacos [...] Ruídos anormais durante a rotação do fuso em vazio (Warm-up). (Seção 3, MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1)"",
+    ""Documentar leituras de telemetria por turno. (Recomendações Gerais, Manual Operacional Resumido – Torno ROMI T 240)""
+  ]
+}
+```",16184.62850000651,0.0,20.483808501037004,18.30209481808159,75.31018257141113
+2,Falha Térmica,1,Baseline (LLM Puro),False,False,none,groq,"Devido à falta de telemetria e contexto específico sobre a situação do torno ROMI T 240, não é possível realizar uma análise detalhada e precisa do estado geral da máquina. No entanto, posso fornecer uma resposta baseada em procedimentos gerais para identificar e lidar com falhas térmicas em tornos industriais, conforme descrito em manuais técnicos e normas de segurança.
+
+```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem valor""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem valor""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem valor""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem valor""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica potencial devido à falta de dados específicos"",
+  ""causas_provaveis"": [
+    ""Sobreaquecimento do motor"",
+    ""Falta de manutenção do sistema de resfriamento"",
+    ""Uso excessivo da máquina""
+  ],
+  ""acoes_recomendadas"": [
+    ""Desligar a máquina imediatamente"",
+    ""Verificar o sistema de resfriamento para garantir que está funcionando corretamente"",
+    ""Realizar manutenção preventiva regular""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do motor"",
+      ""limite"": ""60°C a 80°C (conforme especificado no manual do fabricante)"",
+      ""fonte_contexto"": ""Manual do fabricante ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A falta de telemetria e contexto específico impede uma análise detalhada, mas procedimentos gerais de segurança e manutenção devem ser seguidos"",
+  ""trechos_utilizados"": [
+    ""Não aplicável devido à falta de contexto e telemetria""
+  ]
+}
+```
+
+Lembre-se de que, para uma análise precisa, é crucial ter acesso à telemetria atualizada e ao contexto específico da máquina. Sem essas informações, as ações recomendadas são baseadas em práticas gerais de segurança e manutenção para tornos industriais. Sempre consulte o manual do fabricante para diretrizes específicas sobre o modelo ROMI T 240.",1903.2145000091987,0.0,37.11132041027928,21.05263157894737,74.42097663879395
+2,Falha Térmica,1,Baseline (LLM Puro),False,False,none,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria para temperatura não foram fornecidos. No entanto, a pergunta pressupõe a identificação de uma falha térmica, indicando um problema crítico nesta variável.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria para vibração RMS não foram fornecidos.""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria para corrente do motor não foram fornecidos.""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria para RPM não foram fornecidos.""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica identificada, exigindo interrupção imediata da operação e aplicação de procedimentos de resfriamento seguro e investigação da causa raiz."",
+  ""causas_provaveis"": [
+    ""Sobrecarga prolongada do motor ou componentes mecânicos (fusos, mancais)"",
+    ""Falha no sistema de refrigeração (bomba, filtro, nível de fluido, trocador de calor)"",
+    ""Falta de lubrificação adequada em componentes críticos"",
+    ""Acúmulo de cavacos ou sujeira obstruindo ventilação ou dissipação de calor"",
+    ""Falha elétrica em componentes (driver, motor)"",
+    ""Ajustes incorretos de parâmetros de corte resultando em esforço excessivo.""
+  ],
+  ""acoes_recomendadas"": [
+    ""Parada Imediata da Máquina: Pressione o botão de emergência para interromper qualquer movimento e processo."",
+    ""Desenergização Segura: Desligue a energia principal da máquina para evitar qualquer reinício acidental e para segurança elétrica."",
+    ""Isolamento da Área: Garanta que o acesso à máquina esteja restrito para evitar acidentes durante o processo de resfriamento."",
+    ""NÃO UTILIZE ÁGUA OU FLUIDOS FRIOS DIRETAMENTE: Evite o choque térmico que pode causar empenamento ou trincas em componentes metálicos quentes. O resfriamento deve ser gradual."",
+    ""Resfriamento Natural: Permita que a máquina resfrie naturalmente, monitorando a temperatura."",
+    ""Ventilação Controlada: Se disponível, utilize ventilação ambiente ou exaustores para auxiliar na dissipação de calor de forma gradual, sem direcionar fluxo de ar frio diretamente para a área superaquecida."",
+    ""Verificação de Componentes do Sistema de Refrigeração: Após um resfriamento parcial e seguro, inspecione visualmente: \n  - Nível e condição do fluido de refrigeração/óleo hidráulico. \n  - Obstruções em filtros e radiadores. \n  - Funcionamento de bombas e ventiladores do sistema de refrigeração (após a falha ser remediada e a máquina estar em condição segura para teste)."",
+    ""Inspeção Visual Detalhada: Procure por sinais de superaquecimento, como descoloração de componentes, vazamentos de lubrificantes, fumaça residual ou componentes deformados."",
+    ""Registro do Evento: Documente a ocorrência, incluindo hora, data, sintomas observados, e ações tomadas. Isso é crucial para a análise de causa raiz."",
+    ""Análise da Causa Raiz: Após o resfriamento e inspeção inicial, planeje uma investigação aprofundada para identificar a causa exata da falha térmica, consultando o manual de serviço da ROMI T 240 para procedimentos específicos."",
+    ""Manutenção Corretiva e Preventiva: Realize os reparos necessários e considere ajustes nos planos de manutenção preventiva para evitar recorrências.""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""temperatura"",
+      ""limite"": ""Não fornecido no contexto RAG. Limites operacionais seguros para componentes críticos (motor, eixos, rolamentos) da ROMI T 240 são especificados no 'Manual de Operação e Manutenção ROMI T 240', tipicamente na seção de especificações técnicas ou diagnóstico de falhas."",
+      ""fonte_contexto"": ""Não há contexto RAG fornecido.""
+    },
+    {
+      ""variavel"": ""vibracao_rms"",
+      ""limite"": ""Não fornecido no contexto RAG. Valores de referência são encontrados no 'Manual de Operação e Manutenção ROMI T 240' ou normas ISO aplicáveis para máquinas-ferramenta."",
+      ""fonte_contexto"": ""Não há contexto RAG fornecido.""
+    },
+    {
+      ""variavel"": ""corrente_motor"",
+      ""limite"": ""Não fornecido no contexto RAG. A corrente nominal e os limites de sobrecarga são especificados no 'Manual de Operação e Manutenção ROMI T 240' e na placa de identificação do motor."",
+      ""fonte_contexto"": ""Não há contexto RAG fornecido.""
+    }
+  ],
+  ""justificativa"": ""A classificação como 'FALHA' é feita com base na premissa da pergunta, que solicita a identificação de uma 'falha térmica'. Sem dados de telemetria, não é possível realizar uma análise quantitativa, mas a própria solicitação implica que a condição de falha já se manifestou. As ações recomendadas são baseadas em boas práticas de segurança industrial e manutenção para mitigar riscos associados ao superaquecimento de equipamentos pesados, na ausência de informações específicas do manual de serviço da ROMI T 240. A ausência de telemetria impede qualquer avaliação quantitativa das variáveis."",
+  ""trechos_utilizados"": [
+    ""Nenhum trecho de contexto RAG foi fornecido para análise neste modo.""
+  ]
+}
+```",14550.243207995663,0.0,17.893582916413973,12.430632630410656,72.16223478317261
+2,Falha Térmica,2,RAG (Docs),True,False,chroma,groq,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""> 90°C"",
+      ""analise"": ""Temperatura crítica, acima do limite de segurança""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar a vibração sem dados""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar a corrente do motor sem dados""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar a rotação sem dados""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica devido à temperatura excessiva"",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore"",
+    ""Obstrução nas entradas de ar do motor principal"",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP)"",
+    ""Verificar se a ventoinha do motor principal está operante"",
+    ""Inspecionar o trocador de calor do painel elétrico"",
+    ""Limpar filtros de ar e completar nível de óleo ISO VG 10"",
+    ""Aguardar resfriamento até 45°C antes de reiniciar""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""90°C"",
+      ""fonte_contexto"": ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A temperatura acima de 90°C é considerada crítica e exige parada imediata para evitar danos ao equipamento"",
+  ""trechos_utilizados"": [
+    ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240"",
+    ""Seção 2.1 – Código de Erro: OVERHEAT (Alta Temperatura) do Guia de Solução de Falhas""
+  ]
+}
+```",1593.530499987537,0.0,43.024431086281794,31.914893617021274,79.41088080406189
+2,Falha Térmica,2,RAG (Docs),True,False,chroma,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Dados de telemetria não fornecidos para esta variável."",
+      ""analise"": ""Para identificar uma falha térmica, a temperatura do cabeçote seria esperada acima de 90°C, conforme o Manual de Operação e Manutenção, Seção 1.1.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Dados de telemetria não fornecidos para esta variável."",
+      ""analise"": ""Dados ausentes.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Dados de telemetria não fornecidos para esta variável."",
+      ""analise"": ""Dados ausentes.""
+    },
+    ""rpm"": {
+      ""valor"": ""Dados de telemetria não fornecidos para esta variável."",
+      ""analise"": ""Dados ausentes.""
+    }
+  },
+  ""diagnostico_resumido"": ""A falha térmica é identificada quando a temperatura do cabeçote excede 90°C, indicando um estado crítico com risco iminente de gripagem dos rolamentos do eixo-árvore e anulação da garantia."",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore."",
+    ""Obstrução nas entradas de ar do motor principal."",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral).""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP) imediatamente."",
+    ""Manter o eixo em repouso para evitar danos adicionais."",
+    ""Verificar se a ventoinha do motor principal está operante."",
+    ""Abrir a tampa de inspeção e remover quaisquer obstruções no trocador de calor."",
+    ""Inspecionar o trocador de calor do painel elétrico."",
+    ""Limpar os filtros de ar."",
+    ""Completar o nível de óleo ISO VG 10, se identificado como baixo."",
+    ""Aguardar o resfriamento da temperatura até 45°C antes de reiniciar a máquina."",
+    ""Resetar o intertravamento somente após a temperatura estar abaixo de 65°C.""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do Cabeçote"",
+      ""limite"": ""> 90°C"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 1.1 – Monitoramento Térmico (Spindle/Eixo-Árvore) e Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido.""
+    },
+    {
+      ""variavel"": ""Temperatura de Resfriamento para Reinício"",
+      ""limite"": ""45°C"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 2.1 – Código de Erro: OVERHEAT, Protocolo de Manutenção (REF: MNT-T240-HO).""
+    },
+    {
+      ""variavel"": ""Temperatura para Resetar Intertravamento"",
+      ""limite"": ""< 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1 – Falha Térmica.""
+    }
+  ],
+  ""justificativa"": ""Uma falha térmica é caracterizada por uma temperatura do cabeçote acima de 90°C, classificada como 'Crítico (Vermelho)' pelo Manual de Operação e Manutenção, Seção 1.1, e aciona o 'Código de Erro: OVERHEAT'. Esta condição representa um 'RISCO DE GRIPAGEM' e exige 'Parada imediata obrigatória'. As ações recomendadas são diretamente extraídas dos protocolos de manutenção (REF: MNT-T240-HO e Seção 5.1.1) para garantir o resfriamento seguro do equipamento e prevenir danos irreversíveis aos componentes do eixo-árvore, especialmente os rolamentos de precisão, cuja operação contínua acima de 90°C anula a garantia."",
+  ""trechos_utilizados"": [
+    ""Seção 5.1.1 – Falha Térmica: Alerta quando temperatura > 85 °C e parada imediata quando > 90 °C. Procedimento: acionar E-STOP, manter eixo em repouso, abrir tampa de inspeção e remover obstruções no trocador de calor. Resetar intertravamento somente após temperatura < 65 °C."",
+    ""1.1 Monitoramento Térmico (Spindle/Eixo-Árvore) [...] Crítico (Vermelho) > 90°C RISCO DE GRIPAGEM. Parada imediata obrigatória. Nota: A operação contínua acima de 90°C anula a garantia do cartucho do eixo-árvore."",
+    ""2.1 Código de Erro: OVERHEAT (Alta Temperatura) Condição: Temperatura > 90°C. Diagnóstico Provável: 1. Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore. 2. Obstrução nas entradas de ar do motor principal. 3. Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral). Protocolo de Manutenção (REF: MNT-T240-HO): 1. Executar parada de emergência (E-STOP). 2. Verificar se a ventoinha do motor principal está operante. 3. Inspecionar o trocador de calor do painel elétrico. 4. Ação Corretiva: Limpar filtros de ar e completar nível de óleo ISO VG 10. Aguardar resfriamento até 45°C antes de reiniciar.""
+  ]
+}
+```",11380.023207995691,0.0,20.389815871691084,18.644067796610173,76.23993158340454
+2,Falha Térmica,2,RAG (Docs),True,False,simple,groq,"Devido à falta de telemetria específica, farei uma análise baseada nos parâmetros e limites fornecidos no manual do Torno ROMI T 240.
+
+```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""> 90°C"",
+      ""analise"": ""Temperatura crítica, acima do limite de segurança.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar sem dados.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar sem dados.""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível avaliar sem dados.""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica devido à temperatura excessiva."",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore."",
+    ""Obstrução nas entradas de ar do motor principal."",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral).""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP)."",
+    ""Verificar se a ventoinha do motor principal está operante."",
+    ""Inspecionar o trocador de calor do painel elétrico."",
+    ""Limpar filtros de ar e completar nível de óleo ISO VG 10."",
+    ""Aguardar resfriamento até 45°C antes de reiniciar.""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""90°C"",
+      ""fonte_contexto"": ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A temperatura acima de 90°C é considerada crítica e exige parada imediata para evitar danos ao eixo-árvore e garantir a segurança do operador."",
+  ""trechos_utilizados"": [
+    ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240""
+  ]
+}
+```
+
+Essa resposta é baseada nos limites e procedimentos descritos no manual para falha térmica, considerando a temperatura como o parâmetro crítico para essa análise. Sem telemetria específica, a avaliação se concentra nos procedimentos de segurança e manutenção recomendados para resfriamento seguro e prevenção de danos ao equipamento.",2080.585832998622,0.0,39.311440608162016,26.666666666666668,78.53807806968689
+2,Falha Térmica,2,RAG (Docs),True,False,simple,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": null,
+      ""analise"": ""A condição de Falha Térmica é caracterizada por uma temperatura superior a 90°C no eixo-árvore, conforme as Seções 1.1 e 2.1 do Manual de Operação e Manutenção - ROMI T 240. Embora telemetria específica não tenha sido fornecida, a questão instrui a identificar esta falha e descrever as ações, o que indica que esta condição limite foi atingida para o propósito do diagnóstico.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria não fornecida. Não é possível avaliar a vibração neste momento.""
+    },
+    ""corrente_motor"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria não fornecida. Não é possível avaliar a corrente do motor principal neste momento.""
+    },
+    ""rpm"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria não fornecida. Não é possível avaliar o RPM neste momento.""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica crítica no eixo-árvore (cabeçote), indicando que a temperatura excedeu 90°C, o que configura a condição de 'OVERHEAT' e risco iminente de gripagem dos rolamentos."",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Obstrução nas entradas de ar do motor principal (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Falta de lubrificação nos rolamentos, com nível de óleo baixo no visor lateral (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1).""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP) imediatamente (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Manter o eixo em repouso e abrir a tampa de inspeção (Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1)."",
+    ""Verificar se a ventoinha do motor principal está operante (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Inspecionar o trocador de calor do painel elétrico (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Limpar os filtros de ar e remover obstruções no trocador de calor (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1; Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1)."",
+    ""Completar o nível de óleo ISO VG 10, se necessário (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)."",
+    ""Aguardar o resfriamento da máquina até 45°C antes de reiniciar (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura Crítica do Eixo-Árvore (Falha Térmica)"",
+      ""limite"": ""> 90°C"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 1.1 e Seção 2.1""
+    },
+    {
+      ""variavel"": ""Temperatura para Reinício Seguro"",
+      ""limite"": ""até 45°C"",
+      ""fonte_contexto"": ""Manual de Operação e Manutenção - ROMI T 240, Seção 2.1 (Protocolo de Manutenção MNT-T240-HO)""
+    },
+    {
+      ""variavel"": ""Temperatura para Resetar Intertravamento"",
+      ""limite"": ""< 65°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1""
+    }
+  ],
+  ""justificativa"": ""A classificação de 'FALHA' é baseada na definição de temperatura crítica para o eixo-árvore, que é superior a 90°C, conforme as Seções 1.1 e 2.1 do Manual de Operação e Manutenção - ROMI T 240. Esta condição aciona o Código de Erro 'OVERHEAT' e exige parada imediata. As ações recomendadas são extraídas diretamente do protocolo de manutenção (REF: MNT-T240-HO) e da Seção 5.1.1 do Manual Operacional Resumido, garantindo um resfriamento seguro e a mitigação dos riscos de danos aos componentes e perda de garantia."",
+  ""trechos_utilizados"": [
+    ""Alerta quando temperatura > 85 °C e parada imediata quando > 90 °C. (Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1)"",
+    ""Procedimento: acionar E-STOP, manter eixo em repouso, abrir tampa de inspeção e remover obstruções no trocador de calor. (Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1)"",
+    ""Resetar intertravamento somente após temperatura < 65 °C. (Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1)"",
+    ""Crítico (Vermelho) > 90°C RISCO DE GRIPAGEM. Parada imediata obrigatória. (Manual de Operação e Manutenção - ROMI T 240, Seção 1.1)"",
+    ""Nota: A operação contínua acima de 90°C anula a garantia do cartucho do eixo-árvore. (Manual de Operação e Manutenção - ROMI T 240, Seção 1.1)"",
+    ""2.1 Código de Erro: OVERHEAT (Alta Temperatura) Condição: Temperatura > 90°C. (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)"",
+    ""Diagnóstico Provável: 1. Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore. 2. Obstrução nas entradas de ar do motor principal. 3. Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral). (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)"",
+    ""Protocolo de Manutenção (REF: MNT-T240-HO): 1. Executar parada de emergência (E-STOP). 2. Verificar se a ventoinha do motor principal está operante. 3. Inspecionar o trocador de calor do painel elétrico. 4. Ação Corretiva: Limpar filtros de ar e completar nível de óleo ISO VG 10. Aguardar resfriamento até 45°C antes de reiniciar. (Manual de Operação e Manutenção - ROMI T 240, Seção 2.1)""
+  ]
+}
+```",16216.9930839882,0.0,16.339798875167286,14.272300469483568,70.98919153213501
+2,Falha Térmica,3,Dual RAG (Docs + Sensores),True,True,chroma,groq,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""92.0"",
+      ""analise"": ""Acima do limite crítico de 90°C, indicando falha térmica""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""3.1"",
+      ""analise"": ""Dentro dos limites aceitáveis, mas próximo ao limite de alerta""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""15.8"",
+      ""analise"": ""Dentro dos parâmetros normais de operação""
+    },
+    ""rpm"": {
+      ""valor"": ""900"",
+      ""analise"": ""Dentro dos parâmetros normais de operação""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica devido à temperatura acima de 90°C"",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore"",
+    ""Obstrução nas entradas de ar do motor principal"",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP)"",
+    ""Verificar se a ventoinha do motor principal está operante"",
+    ""Inspecionar o trocador de calor do painel elétrico"",
+    ""Limpar filtros de ar e completar nível de óleo ISO VG 10"",
+    ""Aguardar resfriamento até 45°C antes de reiniciar""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""90°C"",
+      ""fonte_contexto"": ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A temperatura de 92.0°C está acima do limite crítico de 90°C, o que indica uma falha térmica e requer ações imediatas para resfriamento seguro"",
+  ""trechos_utilizados"": [
+    ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240"",
+    ""Seção 2.1 – Código de Erro: OVERHEAT do Guia de Solução de Falhas""
+  ]
+}
+```",1688.195833005011,0.0,43.04252469759437,33.76623376623377,79.83056306838989
+2,Falha Térmica,3,Dual RAG (Docs + Sensores),True,True,chroma,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""92.0 °C"",
+      ""analise"": ""A temperatura do cabeçote de 92.0 °C excede o limite crítico de 90°C para parada imediata, conforme o Manual de Operação e Manutenção, Seção 1.1 e o Manual Operacional Resumido, Seção 5.1.1. Esta condição representa risco iminente de gripagem dos rolamentos e anula a garantia do cartucho do eixo-árvore.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""3.1 mm/s"",
+      ""analise"": ""A vibração RMS de 3.1 mm/s está na 'Zona B' (2.6 a 4.5 mm/s) de acordo com a ISO 20816, classificada como 'Aceitável' e permitindo operação irrestrita. Este parâmetro está dentro dos limites normais, conforme o Manual de Operação e Manutenção, Seção 1.2.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""15.8 A"",
+      ""analise"": ""A corrente de armadura de 15.8 A está dentro da faixa típica de 10 A a 18 A para ciclo nominal, conforme o Manual Operacional Resumido, Seção 4.2. Este valor é considerado normal.""
+    },
+    ""rpm"": {
+      ""valor"": ""900"",
+      ""analise"": ""Não há limites operacionais ou de falha específicos para RPM listados no contexto fornecido, para a avaliação de estado geral da máquina, a menos que associados a vibração crítica, o que não é o caso aqui.""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica crítica no cabeçote/eixo-árvore, com a temperatura excedendo significativamente o limite de segurança, indicando risco de gripagem e danos permanentes. As demais variáveis de telemetria (vibração e corrente) estão dentro dos limites aceitáveis/normais, mas a falha térmica é o fator dominante."",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Obstrução nas entradas de ar do motor principal (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Falta de lubrificação nos rolamentos devido a nível de óleo baixo (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1).""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP) imediatamente para cessar a operação e prevenir danos maiores (Manual Operacional Resumido, Seção 5.1.1; MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Manter o eixo-árvore em repouso (Manual Operacional Resumido, Seção 5.1.1)."",
+    ""Verificar se a ventoinha do motor principal está operante (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Inspecionar e remover quaisquer obstruções no trocador de calor do cabeçote e/ou do painel elétrico (Manual Operacional Resumido, Seção 5.1.1; MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Limpar os filtros de ar do sistema de refrigeração (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Completar o nível de óleo ISO VG 10 nos rolamentos, se for verificado que está baixo (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)."",
+    ""Aguardar o resfriamento da máquina até 45°C antes de tentar reiniciar a operação para evitar danos e garantir a segurança (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do cabeçote - Faixa Normal"",
+      ""limite"": ""25 °C a 65 °C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2; MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.1""
+    },
+    {
+      ""variavel"": ""Temperatura do cabeçote - Limite de Alerta"",
+      ""limite"": ""> 85 °C (no Resumido) ou 66°C a 89°C (no Completo)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 5.1.1; MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.1""
+    },
+    {
+      ""variavel"": ""Temperatura do cabeçote - Limite Crítico (Parada Imediata)"",
+      ""limite"": ""> 90 °C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 5.1.1; MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.1 e 2.1""
+    },
+    {
+      ""variavel"": ""Temperatura para Reinício Seguro"",
+      ""limite"": ""45°C"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS - Zona B (Aceitável)"",
+      ""limite"": ""2.6 a 4.5 mm/s"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.2 (ISO 20816)""
+    },
+    {
+      ""variavel"": ""Corrente de Armadura Típica"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""A classificação como 'FALHA' é imposta pela leitura de temperatura do cabeçote de 92.0 °C. Este valor excede o limite de 90°C, a partir do qual é exigida 'parada imediata obrigatória' e há 'RISCO DE GRIPAGEM', conforme detalhado no MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.1. Embora a vibração e a corrente estejam em níveis aceitáveis, a criticidade da temperatura anula qualquer avaliação normal dos demais parâmetros e demanda intervenção urgente para evitar danos permanentes e anulação da garantia."",
+  ""trechos_utilizados"": [
+    ""Temperatura recomendada do cabeçote: 25 °C a 65 °C. (Manual Operacional Resumido, Seção 4.2)"",
+    ""Alerta quando temperatura > 85 °C e parada imediata quando > 90 °C. (Manual Operacional Resumido, Seção 5.1.1)"",
+    ""Procedimento: acionar E-STOP, manter eixo em repouso, abrir tampa de inspeção e remover obstruções no trocador de calor. (Manual Operacional Resumido, Seção 5.1.1)"",
+    ""Resetar intertravamento somente após temperatura < 65 °C. (Manual Operacional Resumido, Seção 5.1.1)"",
+    ""Vibração RMS aceitável: até 2.8 mm/s para operação contínua (Zona A – ISO 20816). (Manual Operacional Resumido, Seção 4.2)"",
+    ""Corrente de armadura típica em ciclo nominal: 10 A a 18 A. (Manual Operacional Resumido, Seção 4.2)"",
+    ""1.1 Monitoramento Térmico (Spindle/Eixo-Árvore) [...] Normal (Verde) 25°C a 65°C Faixa ideal de trabalho e estabilidade térmica. Alerta (Amarelo) 66°C a 89°C Início de degradação do filme de óleo. Verificar sistema de refrigeração do cabeçote. Crítico (Vermelho) > 90°C RISCO DE GRIPAGEM. Parada imediata obrigatória. Nota: A operação contínua acima de 90°C anula a garantia do cartucho do eixo-árvore. (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.1)"",
+    ""1.2 Monitoramento de Vibração (Baseado na ISO 20816) [...] Zona ISO Faixa (mm/s RMS) Avaliação Ação Recomendada A 0.0 a 2.5 Excelente [...] B 2.6 a 4.5 Aceitável Operação irrestrita permitida. (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 1.2)"",
+    ""2.1 Código de Erro: OVERHEAT (Alta Temperatura) Condição: Temperatura > 90°C. Diagnóstico Provável: 1. Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore. 2. Obstrução nas entradas de ar do motor principal. 3. Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral). Protocolo de Manutenção (REF: MNT-T240-HO): 1. Executar parada de emergência (E-STOP). 2. Verificar se a ventoinha do motor principal está operante. 3. Inspecionar o trocador de calor do painel elétrico. 4. Ação Corretiva: Limpar filtros de ar e completar nível de óleo ISO VG 10. Aguardar resfriamento até 45°C antes de reiniciar. (MANUAL DE OPERAÇÃO E MANUTENÇÃO, Seção 2.1)""
+  ]
+}
+```",22482.548542000586,0.0,13.618215710961985,14.022140221402216,72.76955842971802
+2,Falha Térmica,3,Dual RAG (Docs + Sensores),True,True,simple,groq,"{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""92.0"",
+      ""analise"": ""Acima do limite crítico de 90°C, indicando falha térmica""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""3.1"",
+      ""analise"": ""Dentro da faixa aceitável, mas próximo ao limite de alerta""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""15.8"",
+      ""analise"": ""Dentro da faixa típica de operação""
+    },
+    ""rpm"": {
+      ""valor"": ""900"",
+      ""analise"": ""Informação relevante para entender a carga da máquina, mas não diretamente relacionada à falha térmica""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica devido à temperatura acima de 90°C"",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore"",
+    ""Obstrução nas entradas de ar do motor principal"",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP)"",
+    ""Verificar se a ventoinha do motor principal está operante"",
+    ""Inspecionar o trocador de calor do painel elétrico"",
+    ""Limpar filtros de ar e completar nível de óleo ISO VG 10"",
+    ""Aguardar resfriamento até 45°C antes de reiniciar""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura"",
+      ""limite"": ""90°C"",
+      ""fonte_contexto"": ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A temperatura de 92.0°C está acima do limite crítico de 90°C, o que indica uma falha térmica e requer ações imediatas para resfriamento seguro e prevenção de danos à máquina"",
+  ""trechos_utilizados"": [
+    ""Seção 5.1.1 – Falha Térmica do Manual Operacional Resumido – Torno ROMI T 240"",
+    ""Seção 2.1 – Código de Erro: OVERHEAT do Guia de Solução de Falhas""
+  ]
+}",1875.6808750040364,0.0,42.14845717996454,33.91521197007481,80.030357837677
+2,Falha Térmica,3,Dual RAG (Docs + Sensores),True,True,simple,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""92.0 °C"",
+      ""analise"": ""A temperatura do cabeçote (spindle/eixo-árvore) está em 92.0 °C, o que excede o limite crítico de 90°C. Esta condição é classificada como 'Crítico (Vermelho)' e indica 'RISCO DE GRIPAGEM', exigindo 'Parada imediata obrigatória' e a anulação da garantia se a operação continuar. Isso se enquadra no 'Código de Erro: OVERHEAT'.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""3.1 mm/s"",
+      ""analise"": ""A vibração RMS está em 3.1 mm/s, o que se encontra na 'Zona B: Aceitável' (2.6 a 4.5 mm/s) de acordo com a norma ISO 20816. Para esta zona, a 'Operação irrestrita' é permitida.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""15.8 A"",
+      ""analise"": ""A corrente do motor está em 15.8 A, o que está dentro da faixa de corrente de armadura típica (10 A a 18 A) para um ciclo nominal.""
+    },
+    ""rpm"": {
+      ""valor"": ""900"",
+      ""analise"": ""A rotação atual de 900 RPM é um valor de operação, mas não há limites normativos diretos no contexto fornecido para sua classificação em um estado de falha específica para RPM isoladamente. No entanto, em caso de alta vibração, a recomendação seria reduzir a rotação.""
+    }
+  },
+  ""diagnostico_resumido"": ""Falha térmica crítica no eixo-árvore, excedendo gravemente os limites operacionais de segurança, com risco iminente de dano ao equipamento e anulação da garantia."",
+  ""causas_provaveis"": [
+    ""Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Obstrução nas entradas de ar do motor principal (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral) (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Executar parada de emergência (E-STOP) imediatamente (Manual Operacional Resumido, Seção 5.1.1; MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Manter o eixo em repouso (Manual Operacional Resumido, Seção 5.1.1)"",
+    ""Abrir tampa de inspeção e remover obstruções no trocador de calor (Manual Operacional Resumido, Seção 5.1.1)"",
+    ""Verificar se a ventoinha do motor principal está operante (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Inspecionar o trocador de calor do painel elétrico (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Limpar filtros de ar e completar nível de óleo ISO VG 10 (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1)"",
+    ""Aguardar resfriamento até 45°C antes de reiniciar (MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1) ou até 65 °C para resetar intertravamento (Manual Operacional Resumido, Seção 5.1.1).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do Cabeçote"",
+      ""limite"": ""> 90°C (Crítico)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 1.1 Monitoramento Térmico""
+    },
+    {
+      ""variavel"": ""Temperatura do Cabeçote (Alerta)"",
+      ""limite"": ""> 85°C"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 5.1.1 – Falha Térmica""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Aceitável)"",
+      ""limite"": ""2.6 a 4.5 mm/s (Zona B)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 1.2 Monitoramento de Vibração (ISO 20816)""
+    },
+    {
+      ""variavel"": ""Corrente de Armadura Típica"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2 – Operação Normal""
+    }
+  ],
+  ""justificativa"": ""A máquina está em estado de 'FALHA' devido à temperatura do cabeçote de 92.0 °C. Este valor excede o limite crítico de 90°C, o que, conforme o 'MANUAL DE OPERAÇÃO E MANUTENÇÃO, 1.1 Monitoramento Térmico', indica 'RISCO DE GRIPAGEM' e exige 'Parada imediata obrigatória', além de anular a garantia em caso de operação contínua. As outras variáveis de telemetria (vibração e corrente do motor) estão dentro das faixas aceitáveis ou típicas, mas a falha térmica é dominante e crítica, demandando intervenção imediata para resfriamento seguro, conforme os protocolos de manutenção especificados no manual."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido, Seção 4.2 – Operação Normal: 'Temperatura recomendada do cabeçote: 25 °C a 65 °C.'"",
+    ""Manual Operacional Resumido, Seção 4.2 – Operação Normal: 'Vibração RMS aceitável: até 2.8 mm/s para operação contínua (Zona A – ISO 20816).'"",
+    ""Manual Operacional Resumido, Seção 4.2 – Operação Normal: 'Corrente de armadura típica em ciclo nominal: 10 A a 18 A.'"",
+    ""Manual Operacional Resumido, Seção 5.1.1 – Falha Térmica: 'Alerta quando temperatura > 85 °C e parada imediata quando > 90 °C.'"",
+    ""Manual Operacional Resumido, Seção 5.1.1 – Falha Térmica: 'Procedimento: acionar E-STOP, manter eixo em repouso, abrir tampa de inspeção e remover obstruções no trocador de calor.'"",
+    ""Manual Operacional Resumido, Seção 5.1.1 – Falha Térmica: 'Resetar intertravamento somente após temperatura < 65 °C.'"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 1.1 Monitoramento Térmico (Spindle/Eixo-Árvore): 'Crítico (Vermelho) > 90°C RISCO DE GRIPAGEM. Parada imediata obrigatória. Nota: A operação contínua acima de 90°C anula a garantia do cartucho do eixo-árvore.'"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 1.2 Monitoramento de Vibração (Baseado na ISO 20816): 'Zona B 2.6 a 4.5 Aceitável Operação irrestrita permitida.'"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1 Código de Erro: OVERHEAT (Alta Temperatura): 'Condição: Temperatura > 90°C.'"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1 Código de Erro: OVERHEAT (Alta Temperatura): 'Diagnóstico Provável: 1. Falha na unidade de refrigeração (Chiller) do óleo do eixo-árvore. 2. Obstrução nas entradas de ar do motor principal. 3. Falta de lubrificação nos rolamentos (nível de óleo baixo no visor lateral).'"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO, 2.1 Código de Erro: OVERHEAT (Alta Temperatura): 'Protocolo de Manutenção (REF: MNT-T240-HO): 1. Executar parada de emergência (E-STOP). 2. Verificar se a ventoinha do motor principal está operante. 3. Inspecionar o trocador de calor do painel elétrico. 4. Ação Corretiva: Limpar filtros de ar e completar nível de óleo ISO VG 10. Aguardar resfriamento até 45°C antes de reiniciar.'""
+  ]
+}
+```",17195.688959007384,0.0,15.057512625462373,15.811606391925986,72.09387421607971
+3,Desbalanceamento,1,Baseline (LLM Puro),False,False,none,groq,"Como não há telemetria fornecida, não é possível realizar uma análise detalhada da vibração RMS ou de qualquer outra variável. No entanto, posso fornecer uma resposta baseada nas instruções e no formato solicitado, destacando a importância da telemetria para uma avaliação precisa.
+
+```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem dados""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem dados, mas a vibração RMS é crucial para diagnosticar problemas mecânicos""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem dados""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não é possível analisar sem dados""
+    }
+  },
+  ""diagnostico_resumido"": ""Não é possível realizar um diagnóstico sem telemetria"",
+  ""causas_provaveis"": [
+    ""Falta de manutenção preventiva"",
+    ""Desalinhamento ou desbalanceamento de componentes""
+  ],
+  ""acoes_recomendadas"": [
+    ""Realizar leituras de telemetria para análise"",
+    ""Verificar alinhamento e balanceamento de componentes mecânicos""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""Varia de acordo com o manual do fabricante (Romi)"",
+      ""fonte_contexto"": ""Manual do Torno Romi T 240""
+    }
+  ],
+  ""justificativa"": ""A falta de telemetria impede uma avaliação precisa. A vibração RMS é uma medida importante para detectar problemas mecânicos, como desalinhamento ou desgaste de componentes."",
+  ""trechos_utilizados"": [
+    ""Não aplicável devido à falta de contexto e telemetria""
+  ]
+}
+```
+
+Lembre-se de que, para uma avaliação precisa, é crucial ter acesso à telemetria e ao contexto específico do equipamento em questão, bem como às recomendações do manual do fabricante (Romi, no caso do torno T 240).",1807.7826669905335,0.0,39.88398323384923,23.65038560411311,73.6132800579071
+3,Desbalanceamento,1,Baseline (LLM Puro),False,False,none,gemini,"```json
+{
+  ""estado_geral"": null,
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria não fornecidos para avaliação.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria de vibração RMS não fornecidos. Impossível realizar avaliação.""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria não fornecidos para avaliação.""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Dados de telemetria não fornecidos para avaliação.""
+    }
+  },
+  ""diagnostico_resumido"": ""Diagnóstico impossível devido à ausência de dados de telemetria."",
+  ""causas_provaveis"": [],
+  ""acoes_recomendadas"": [
+    ""Coletar dados de telemetria de vibração RMS, temperatura, corrente do motor e RPM para permitir qualquer avaliação e diagnóstico."",
+    ""Sem dados de vibração RMS, não é possível indicar correções mecânicas imediatas ou específicas.""
+  ],
+  ""limites_referenciados"": [],
+  ""justificativa"": ""Como Engenheiro Sênior de Diagnóstico Industrial, a análise e classificação do estado geral, bem como a indicação de ações recomendadas, dependem criticamente da disponibilidade de dados de telemetria e contexto técnico. Neste cenário, nenhuma telemetria foi fornecida e o modo 'Baseline (LLM Puro)' explicitamente não incluiu contexto RAG. Portanto, não é possível avaliar a vibração RMS nem indicar correções mecânicas imediatas ou realizar qualquer diagnóstico, pois não há informações para analisar. A ausência de valores impede qualquer classificação (NORMAL, ALERTA, FALHA) conforme solicitado. Não é possível inventar valores ausentes, conforme instruído."",
+  ""trechos_utilizados"": []
+}
+```",8444.645333001972,0.0,39.926588585407174,22.77777777777778,70.64545750617981
+3,Desbalanceamento,2,RAG (Docs),True,False,chroma,groq,"Como não foram fornecidos valores específicos de telemetria, vou considerar um cenário hipotético para fins de demonstração, utilizando os limites e diretrizes fornecidos no manual do Torno ROMI T 240.
+
+Suponha que a vibração RMS medida seja de 12 mm/s, o que está acima do limite de alerta (10 mm/s) e dentro da zona considerada inaceitável (Zona D, ≥ 10.0 mm/s) de acordo com a norma ISO 20816.
+
+```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não aplicável""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""12 mm/s"",
+      ""analise"": ""Inaceitável, acima do limite de 10 mm/s""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não aplicável""
+    },
+    ""rpm"": {
+      ""valor"": ""Não fornecido"",
+      ""analise"": ""Não aplicável""
+    }
+  },
+  ""diagnostico_resumido"": ""Vibração RMS excessiva, indicando possível desbalanceamento ou problema mecânico"",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça"",
+    ""Fixação inadequada"",
+    ""Colisão ou dano nos rolamentos"",
+    ""Desgaste de ferramenta""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente"",
+    ""Verificar a pressão do manômetro da placa hidráulica"",
+    ""Reapertar os parafusos de fixação das castanhas"",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""10 mm/s"",
+      ""fonte_contexto"": ""ISO 20816 e Manual do Torno ROMI T 240, Seção 6.3""
+    }
+  ],
+  ""justificativa"": ""A vibração RMS medida está acima do limite aceitável, indicando uma condição de falha que requer atenção imediata para evitar danos à máquina ou acidentes"",
+  ""trechos_utilizados"": [
+    ""Seção 6.3 – Vibração e Desbalanceamento do Manual do Torno ROMI T 240"",
+    ""Norma ISO 20816 para máquinas rotativas industriais""
+  ]
+}
+```
+
+Lembre-se de que este é um exemplo baseado em uma suposição de telemetria, e a avaliação real deve ser feita com base nos dados reais da máquina. Sempre consultar o manual do Torno ROMI T 240 e seguir as recomendações específicas para a manutenção e reparo da máquina.",2466.150749998633,0.0,36.2748520066958,28.077753779697623,76.56185626983643
+3,Desbalanceamento,2,RAG (Docs),True,False,chroma,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria para temperatura não fornecida neste modo de experimento.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria para vibração RMS não fornecida. No entanto, se a pergunta implica a necessidade de 'correções mecânicas imediatas', presume-se uma condição de vibração crítica, classificada como 'Inaceitável' (Zona D) ou 'Insatisfatório' (Zona C) conforme ISO 20816, que demandaria ação imediata.""
+    },
+    ""corrente_motor"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria para corrente do motor não fornecida neste modo de experimento.""
+    },
+    ""rpm"": {
+      ""valor"": null,
+      ""analise"": ""Telemetria para RPM não fornecida neste modo de experimento.""
+    }
+  },
+  ""diagnostico_resumido"": ""A ausência de telemetria impede um diagnóstico exato. Contudo, a solicitação de 'correções mecânicas imediatas' para vibração RMS aponta para um cenário de vibração crítica, onde o equipamento estaria na Zona D (Inaceitável) da ISO 20816, com risco de dano iminente ou já presente, exigindo parada e intervenção."",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça (fixada fora de centro ou com distribuição de massa irregular)."",
+    ""Fixação inadequada da peça (baixa pressão nas castanhas da placa hidráulica)."",
+    ""Colisão anterior (dano nos rolamentos do eixo-árvore)."",
+    ""Desgaste ou quebra da ferramenta de corte (inserto de corte quebrado gerando esforço excessivo)."",
+    ""Cavacos presos ou interferências mecânicas.""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente para evitar danos maiores. (REF: MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2, Protocolo de Manutenção MNT-T240-VIB)"",
+    ""Verificar a pressão do manômetro da placa, garantindo que esteja na faixa ideal (15-25 bar) para a peça em questão. (REF: MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2, Protocolo de Manutenção MNT-T240-VIB)"",
+    ""Reapertar os parafusos de fixação das castanhas moles/duras na placa para assegurar a fixação da peça. (REF: MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2, Protocolo de Manutenção MNT-T240-VIB)"",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte, que podem gerar vibração excessiva. (REF: MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2, Protocolo de Manutenção MNT-T240-VIB)"",
+    ""Remover quaisquer cavacos presos que possam estar causando desbalanceamento ou interferência. (REF: Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3)""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""0.0 a 2.5 mm/s (Zona A - Excelente)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2""
+    ,
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""2.6 a 4.5 mm/s (Zona B - Aceitável)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""4.6 a 9.9 mm/s (Zona C - Insatisfatório / Alerta)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""≥ 10.0 mm/s (Zona D - Inaceitável / Dano Iminente)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2""
+    }
+  ],
+  ""justificativa"": ""A ausência de dados de telemetria impede a atribuição de um valor específico de vibração RMS. Contudo, a solicitação de 'correções mecânicas imediatas' implica que a máquina esteja operando em um nível de vibração considerado 'Insatisfatório' (Alerta - Zona C) ou, mais provavelmente, 'Inaceitável' (FALHA - Zona D), conforme a norma ISO 20816-1:2016 e ISO 20816-21:2025 referenciadas no manual. Um nível de ≥ 10.0 mm/s RMS (Zona D) é classificado como 'DANO IMINENTE' e exige o desligamento da máquina e ações corretivas imediatas. Portanto, o estado geral é classificado como FALHA por inferência da gravidade da solicitação."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3 – Vibração e Desbalanceamento"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 – Monitoramento de Vibração (Baseado na ISO 20816)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2 – Código de Erro: HIGH_VIB (Vibração Crítica)""
+  ]
+}
+```",14605.165084009059,0.0,18.898239935666503,15.96244131455399,71.24025821685791
+3,Desbalanceamento,2,RAG (Docs),True,False,simple,groq,"Como não há telemetria fornecida, não posso realizar uma análise precisa da vibração RMS ou de outros parâmetros. No entanto, posso fornecer uma resposta baseada nas informações gerais sobre como avaliar e corrigir a vibração em um torno ROMI T 240, de acordo com o manual fornecido.
+
+```json
+{
+  ""estado_geral"": ""NORMAL"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível, mas deve ser verificada contra os limites da Zona A (0.0 a 2.5 mm/s) da ISO 20816 para máquinas rotativas industriais.""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Não disponível""
+    }
+  },
+  ""diagnostico_resumido"": ""Não é possível realizar um diagnóstico preciso sem telemetria."",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça"",
+    ""Fixação inadequada"",
+    ""Colisão ou dano nos rolamentos"",
+    ""Desgaste de ferramenta""
+  ],
+  ""acoes_recomendadas"": [
+    ""Verificar a pressão nas castanhas da placa hidráulica"",
+    ""Reapertar os parafusos de fixação das castanhas"",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte"",
+    ""Realizar balanceamento dinâmico do conjunto árvore-cartucho se necessário""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""10 mm/s (limiar de alerta)"",
+      ""fonte_contexto"": ""Seção 6.3 do Manual Operacional Resumido – Torno ROMI T 240 e ISO 20816""
+    }
+  ],
+  ""justificativa"": ""A resposta é baseada nas diretrizes gerais para a manutenção e operação do torno ROMI T 240, considerando a falta de dados específicos de telemetria."",
+  ""trechos_utilizados"": [
+    ""Seção 6.3 – Vibração e Desbalanceamento do Manual Operacional Resumido – Torno ROMI T 240"",
+    ""ISO 20816-1:2016 e ISO 20816-21:2025 para avaliação de vibração em máquinas""
+  ]
+}
+```
+
+Lembre-se de que, sem os dados de telemetria específicos, não é possível fornecer uma avaliação precisa do estado do torno ou recomendar ações corretivas específicas. É crucial monitorar e registrar regularmente os parâmetros de telemetria para manter a máquina em boas condições de operação e segurança.",2127.230584010249,0.0,35.86492255691571,25.48596112311015,76.80571675300598
+3,Desbalanceamento,2,RAG (Docs),True,False,simple,gemini,"```json
+{
+  ""estado_geral"": ""ALERTA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": """",
+      ""analise"": ""Telemetria de temperatura não fornecida.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": """",
+      ""analise"": ""Telemetria de vibração RMS não foi fornecida, impossibilitando a avaliação do estado atual da vibração do torno ROMI T 240. Não é possível determinar se a máquina está nas Zonas A, B, C ou D conforme ISO 20816.""
+    },
+    ""corrente_motor"": {
+      ""valor"": """",
+      ""analise"": ""Telemetria de corrente do motor não fornecida.""
+    },
+    ""rpm"": {
+      ""valor"": """",
+      ""analise"": ""Telemetria de RPM não fornecida.""
+    }
+  },
+  ""diagnostico_resumido"": ""A avaliação da vibração RMS não pôde ser realizada devido à ausência de dados de telemetria. Contudo, o manual ROMI T 240 fornece diretrizes claras para classificação de vibração e ações corretivas mecânicas imediatas em caso de níveis elevados."",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça: Peça fixada fora de centro ou com distribuição de massa irregular (REF: MANUAL, Seção 2.2)"",
+    ""Fixação inadequada: Baixa pressão nas castanhas da placa hidráulica (REF: MANUAL, Seção 2.2)"",
+    ""Colisão: Dano nos rolamentos após choque da torre ('crash') (REF: MANUAL, Seção 2.2)"",
+    ""Desgaste de Ferramenta: Inserto de corte quebrado gerando esforço excessivo (REF: MANUAL, Seção 2.2)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente, caso a vibração atinja níveis críticos (REF: MANUAL, Seção 2.2)."",
+    ""Verificar a pressão do manômetro da placa (Ideal: 15-25 bar dependendo da peça) (REF: MANUAL, Seção 2.2)."",
+    ""Reapertar os parafusos de fixação das castanhas moles/duras (REF: MANUAL, Seção 2.2)."",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte (REF: MANUAL, Seção 2.2)."",
+    ""Se a vibração for crítica (≥ 10.0 mm/s), desligar a máquina para evitar dano iminente (REF: MANUAL, Seção 1.2).""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS (Zona A - Excelente)"",
+      ""limite"": ""0.0 a 2.5 mm/s"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 (Baseado na ISO 20816)""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona B - Aceitável)"",
+      ""limite"": ""2.6 a 4.5 mm/s"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 (Baseado na ISO 20816)""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona C - Insatisfatório / Alerta)"",
+      ""limite"": ""4.6 a 9.9 mm/s"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 (Baseado na ISO 20816)""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Zona D - Inaceitável / DANO IMINENTE)"",
+      ""limite"": ""≥ 10.0 mm/s"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 (Baseado na ISO 20816)""
+    },
+    {
+      ""variavel"": ""Vibração RMS aceitável (Operação contínua)"",
+      ""limite"": ""até 2.8 mm/s"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""O estado geral é classificado como ALERTA devido à impossibilidade de avaliar a condição atual da vibração RMS do torno, conforme solicitado, pela ausência de dados de telemetria. Um engenheiro de diagnóstico industrial não pode emitir um parecer preciso sobre a saúde da máquina sem os dados de monitoramento críticos. As ações recomendadas e as causas prováveis são baseadas no protocolo de manutenção do manual para cenários de alta vibração, caso estes dados sejam observados em uma avaliação futura."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 – Operação Normal."",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3 – Vibração e Desbalanceamento."",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 – Monitoramento de Vibração (Baseado na ISO 20816)."",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 2.2 – Código de Erro: HIGH_VIB (Vibração Crítica).""
+  ]
+}
+```",22270.428625008208,0.0,20.25706696999741,16.539440203562343,72.1895158290863
+3,Desbalanceamento,3,Dual RAG (Docs + Sensores),True,True,chroma,groq,"```json
+{
+  ""estado_geral"": ""ALERTA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""48.0"",
+      ""analise"": ""Dentro da faixa de temperatura recomendada (25 °C a 65 °C) - Seção 4.2 do Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""11.2"",
+      ""analise"": ""Acima do limite de vibração RMS aceitável (10 mm/s) - Seção 6.3 do Manual Operacional Resumido – Torno ROMI T 240 e Zona D da ISO 20816""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""12.5"",
+      ""analise"": ""Dentro da faixa de corrente de armadura típica em ciclo nominal (10 A a 18 A) - Seção 4.2 do Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    ""rpm"": {
+      ""valor"": ""1600"",
+      ""analise"": ""Não há informações específicas sobre o limite de RPM no contexto fornecido""
+    }
+  },
+  ""diagnostico_resumido"": ""Vibração RMS acima do limite aceitável, indicando necessidade de correção mecânica imediata"",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça"",
+    ""Fixação inadequada"",
+    ""Colisão ou dano nos rolamentos"",
+    ""Desgaste de ferramenta""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente"",
+    ""Verificar a pressão do manômetro da placa"",
+    ""Reapertar os parafusos de fixação das castanhas"",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""10 mm/s"",
+      ""fonte_contexto"": ""Seção 6.3 do Manual Operacional Resumido – Torno ROMI T 240 e Zona D da ISO 20816""
+    }
+  ],
+  ""justificativa"": ""A vibração RMS está acima do limite aceitável, o que pode causar danos à máquina e comprometer a segurança do operador. É necessário tomar ações corretivas imediatas para reduzir a vibração e evitar danos maiores."",
+  ""trechos_utilizados"": [
+    ""Seção 4.2 – Operação Normal"",
+    ""Seção 6.3 – Vibração e Desbalanceamento"",
+    ""Seção 2.2 – Código de Erro: HIGH_VIB""
+  ]
+}
+```",1966.4503340027295,0.0,39.39057361942013,33.2541567695962,77.78858542442322
+3,Desbalanceamento,3,Dual RAG (Docs + Sensores),True,True,chroma,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""48.0 °C"",
+      ""analise"": ""A temperatura do cabeçote (48.0 °C) encontra-se dentro da faixa de operação normal e estabilidade térmica (25 °C a 65 °C), conforme a Seção 4.2 do Manual Operacional Resumido e a Seção 1.1 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""11.2 mm/s"",
+      ""analise"": ""A vibração RMS (11.2 mm/s) excede significativamente o limite de 10.0 mm/s, classificando-a como 'Inaceitável' (Zona D – DANO IMINENTE), conforme a Seção 1.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, baseado na ISO 20816-1:2016. Este valor está acima do limiar de alerta de 10 mm/s mencionado na Seção 6.3 do Manual Operacional Resumido, e corresponde à condição 'HIGH_VIB' que exige o desligamento imediato da máquina.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""12.5 A"",
+      ""analise"": ""A corrente de armadura do motor (12.5 A) está dentro da faixa típica de 10 A a 18 A para ciclo nominal, conforme a Seção 4.2 do Manual Operacional Resumido.""
+    },
+    ""rpm"": {
+      ""valor"": ""1600"",
+      ""analise"": ""A rotação atual é de 1600 RPM. No entanto, devido à condição de vibração crítica ('HIGH_VIB'), o protocolo de manutenção exige a redução imediata da rotação a zero para evitar danos adicionais. (Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)""
+    }
+  },
+  ""diagnostico_resumido"": ""Vibração crítica do eixo-árvore excedendo os limites de segurança, indicando DANO IMINENTE e necessidade de parada imediata para inspeção e correção. Embora temperatura e corrente estejam normais, a severidade da vibração classifica o estado como FALHA."",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça, causada por fixação fora de centro ou distribuição de massa irregular. (Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Fixação inadequada da peça, com baixa pressão nas castanhas da placa hidráulica. (Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Dano nos rolamentos do eixo-árvore, possivelmente resultante de uma colisão ('crash') anterior. (Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Desgaste excessivo ou quebra do inserto de corte da ferramenta, gerando esforços dinâmicos elevados. (Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente para prevenir danos adicionais e desligar a máquina. (Protocolo de Manutenção MNT-T240-VIB, Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Verificar a pressão do manômetro da placa hidráulica (ideal: 15-25 bar dependendo da peça) e reapertar os parafusos de fixação das castanhas moles/duras. (Protocolo de Manutenção MNT-T240-VIB, Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Inspecionar a peça em usinagem quanto a desbalanceamento ou fixação inadequada."",
+    ""Verificar e substituir o inserto de usinagem se houver lascas, fraturas ou desgaste acentuado na aresta de corte. (Protocolo de Manutenção MNT-T240-VIB, Seção 2.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240)"",
+    ""Se o problema persistir após as verificações e correções superficiais, realizar uma inspeção mais aprofundada nos rolamentos do eixo-árvore para identificar possíveis danos.""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Temperatura do Cabeçote"",
+      ""limite"": ""25 °C a 65 °C (Normal)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2; MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.1""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Operação Contínua Aceitável)"",
+      ""limite"": ""até 2.8 mm/s (Zona A)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS (Limite Inaceitável / DANO IMINENTE)"",
+      ""limite"": ""≥ 10.0 mm/s (Zona D)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 6.3; MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Seção 1.2 e 2.2""
+    },
+    {
+      ""variavel"": ""Corrente de Armadura Típica"",
+      ""limite"": ""10 A a 18 A"",
+      ""fonte_contexto"": ""Manual Operacional Resumido, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""O estado geral é classificado como FALHA devido à leitura de vibração RMS de 11.2 mm/s. Este valor está claramente na Zona D ('Inaceitável') da norma ISO 20816 para máquinas rotativas (Seção 1.2 do MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240), indicando 'DANO IMINENTE' e a necessidade de desligamento imediato da máquina. A telemetria 'STATUS: VIBRATION_ALERT' corrobora essa condição crítica. As demais variáveis (temperatura e corrente) estão dentro dos parâmetros operacionais normais, isolando a vibração como o fator determinante da falha atual."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 – Operação Normal"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3 – Vibração e Desbalanceamento"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1, Seção 1.1 – Monitoramento Térmico (Spindle/Eixo-Árvore)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1, Seção 1.2 – Monitoramento de Vibração (Baseado na ISO 20816)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, Revisão Técnica 2025.1, Seção 2.2 – Código de Erro: HIGH_VIB (Vibração Crítica)""
+  ]
+}
+```",23470.375582997804,0.0,16.749329182228962,15.75984990619137,70.00588774681091
+3,Desbalanceamento,3,Dual RAG (Docs + Sensores),True,True,simple,groq,"```json
+{
+  ""estado_geral"": ""ALERTA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""48.0"",
+      ""analise"": ""Dentro da faixa de temperatura recomendada (25 °C a 65 °C) - Seção 4.2 do Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""11.2"",
+      ""analise"": ""Excede o limite de vibração RMS para eixos produtivos (10 mm/s) - Seção 6.3 do Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""12.5"",
+      ""analise"": ""Dentro da faixa de corrente de armadura típica em ciclo nominal (10 A a 18 A) - Seção 4.2 do Manual Operacional Resumido – Torno ROMI T 240""
+    },
+    ""rpm"": {
+      ""valor"": ""1600"",
+      ""analise"": ""Não há informações específicas sobre o limite de RPM no contexto fornecido""
+    }
+  },
+  ""diagnostico_resumido"": ""Vibração RMS acima do limite aceitável, indicando necessidade de correção mecânica imediata"",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça"",
+    ""Fixação inadequada"",
+    ""Colisão"",
+    ""Desgaste de ferramenta""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente"",
+    ""Verificar a pressão do manômetro da placa"",
+    ""Reapertar os parafusos de fixação das castanhas"",
+    ""Substituir o inserto de usinagem se houver lascas na aresta de corte""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""10 mm/s"",
+      ""fonte_contexto"": ""Seção 6.3 do Manual Operacional Resumido – Torno ROMI T 240""
+    }
+  ],
+  ""justificativa"": ""A vibração RMS está acima do limite aceitável, o que pode causar danos à máquina e comprometer a segurança do operador"",
+  ""trechos_utilizados"": [
+    ""Seção 4.2 – Operação Normal"",
+    ""Seção 6.3 – Vibração e Desbalanceamento"",
+    ""Seção 2.2 – Código de Erro: HIGH_VIB""
+  ]
+}
+```",1784.3316249927739,0.0,41.53810418175365,33.33333333333333,77.90395617485046
+3,Desbalanceamento,3,Dual RAG (Docs + Sensores),True,True,simple,gemini,"```json
+{
+  ""estado_geral"": ""FALHA"",
+  ""avaliacao_telemetria"": {
+    ""temperatura"": {
+      ""valor"": ""48.0 °C"",
+      ""analise"": ""A temperatura do cabeçote de 48.0 °C está dentro da faixa operacional normal (25 °C a 65 °C), conforme 'Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2' e 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.1 Monitoramento Térmico'.""
+    },
+    ""vibracao_rms"": {
+      ""valor"": ""11.2 mm/s RMS"",
+      ""analise"": ""O valor de vibração RMS de 11.2 mm/s é alarmante. Excede o limite de alerta de 10 mm/s e está na Zona D (Inaceitável) da norma ISO 20816, indicando 'DANO IMINENTE'. Esta condição é classificada como 'HIGH_VIB' no manual, exigindo desligamento imediato da máquina para evitar danos maiores e risco de segurança. Fonte: 'Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3' e 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.2 Monitoramento de Vibração' e '2.2 Código de Erro: HIGH_VIB'.""
+    },
+    ""corrente_motor"": {
+      ""valor"": ""12.5 A"",
+      ""analise"": ""A corrente do motor de 12.5 A está dentro da faixa típica de 10 A a 18 A para ciclo nominal, conforme 'Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2'. Não há indícios de sobrecarga elétrica neste momento.""
+    },
+    ""rpm"": {
+      ""valor"": ""1600 RPM"",
+      ""analise"": ""A rotação atual de 1600 RPM é um fator agravante para a vibração crítica. O protocolo de manutenção para 'HIGH_VIB' exige a redução imediata da rotação para zero. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB'.""
+    }
+  },
+  ""diagnostico_resumido"": ""A máquina ROMI T 240 está em estado de FALHA devido à vibração RMS crítica de 11.2 mm/s, que excede o limite de 10.0 mm/s (Zona D – Inaceitável) conforme ISO 20816. Há risco de dano iminente aos componentes e risco de segurança. É imperativa a parada imediata e intervenção. O telemetry status 'VIBRATION_ALERT' corrobora esta condição."",
+  ""causas_provaveis"": [
+    ""Desbalanceamento da peça (fixação fora de centro ou distribuição de massa irregular). Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB'."",
+    ""Fixação inadequada da peça (baixa pressão nas castanhas da placa hidráulica). Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB'."",
+    ""Dano nos rolamentos do eixo-árvore, possivelmente após uma colisão ('crash'). Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB'."",
+    ""Desgaste ou quebra de ferramenta, causando esforço excessivo. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB'.""
+  ],
+  ""acoes_recomendadas"": [
+    ""Reduzir a rotação (RPM) a zero imediatamente para prevenir danos maiores e garantir a segurança. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Protocolo de Manutenção (REF: MNT-T240-VIB)'."",
+    ""Verificar a pressão do manômetro da placa hidráulica (Ideal: 15-25 bar dependendo da peça) para assegurar fixação adequada. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Protocolo de Manutenção (REF: MNT-T240-VIB)'."",
+    ""Reapertar os parafusos de fixação das castanhas (moles/duras) da placa para eliminar folgas. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Protocolo de Manutenção (REF: MNT-T240-VIB)'."",
+    ""Inspecionar a ferramenta de usinagem e substituir o inserto de corte se houver lascas ou desgaste excessivo. Fonte: 'MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Protocolo de Manutenção (REF: MNT-T240-VIB)'."",
+    ""Após as ações corretivas, reavaliar a peça em usinagem para verificar desbalanceamento ou fixação inadequada. Caso a vibração persista, iniciar um balanceamento dinâmico do conjunto árvore-cartucho. Fonte: 'Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3'.""
+  ],
+  ""limites_referenciados"": [
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""até 2.8 mm/s para operação contínua (Zona A – ISO 20816)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""10 mm/s (limiar de alerta)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3""
+    },
+    {
+      ""variavel"": ""Vibração RMS"",
+      ""limite"": ""≥ 10.0 mm/s (Inaceitável - DANO IMINENTE)"",
+      ""fonte_contexto"": ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.2 Monitoramento de Vibração""
+    },
+    {
+      ""variavel"": ""Temperatura do cabeçote"",
+      ""limite"": ""25 °C a 65 °C (Faixa ideal de trabalho)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 e MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.1 Monitoramento Térmico""
+    },
+    {
+      ""variavel"": ""Corrente de armadura"",
+      ""limite"": ""10 A a 18 A (típica em ciclo nominal)"",
+      ""fonte_contexto"": ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2""
+    }
+  ],
+  ""justificativa"": ""O estado geral é classificado como FALHA devido à leitura crítica da vibração RMS de 11.2 mm/s, que excede o limite 'Inaceitável' de 10.0 mm/s estabelecido pelas normas ISO 20816 e pelo manual do ROMI T 240 ('MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.2 Monitoramento de Vibração'). Esta condição é categorizada como 'HIGH_VIB', indicando DANO IMINENTE e exigindo parada imediata. Embora temperatura e corrente estejam normais, a vibração crítica é o fator dominante que determina a parada e a intervenção urgente, conforme os protocolos de segurança e manutenção da ROMI."",
+  ""trechos_utilizados"": [
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 4.2 – Operação Normal"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 5.1.1 – Falha Térmica"",
+    ""Manual Operacional Resumido – Torno ROMI T 240, Seção 6.3 – Vibração e Desbalanceamento"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.1 Monitoramento Térmico (Spindle/Eixo-Árvore)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 1.2 Monitoramento de Vibração (Baseado na ISO 20816)"",
+    ""MANUAL DE OPERAÇÃO E MANUTENÇÃO - ROMI T 240, 2.2 Código de Erro: HIGH_VIB (Vibração Crítica)""
+  ]
+}
+```",16465.037625006516,0.0,14.694350439554736,14.443500424808835,69.22775506973267

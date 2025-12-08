@@ -207,9 +207,13 @@ marimo/_lsp/
 __marimo__/
 
 # Runtime data (uploads, índices, logs, resumos)
-data/
+data/api/chromadb/
+data/api/faiss_index/
+data/logs/
+data/summaries/
+data/weaviate/
 !data/.gitkeep
-
 # outros
 .DS_Store
 thumbs.db
+/core/.chroma/

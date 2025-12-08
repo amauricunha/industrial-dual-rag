@@ -4,7 +4,7 @@ O script executa os seguintes passos:
 1. Carrega documentos da pasta ./docs e gera embeddings com SentenceTransformer.
 2. Indexa o conteúdo em dois repositórios vetoriais: ChromaDB e um banco de memória simples.
 3. Monta prompts combinando contexto, telemetria fixa e instruções estruturadas.
-4. Consulta dois LLMs (Groq e Gemini). Se as chaves não estiverem configuradas, gera respostas simuladas.
+4. Consulta dois LLMs (Groq e Gemini). Se as chaves não estiverem configuradas, a execução é interrompida.
 5. Calcula métricas (accuracy, BLEU, ROUGE-L e BERTScore) contra os gabaritos oficiais.
 6. Exporta um CSV com todos os experimentos e gráficos .png para facilitar artigos/apresentações.
 
@@ -16,9 +16,13 @@ Execute com:
 """
 
 from __future__ import annotations
-
+from chromadb.config import Settings
+from google.api_core.exceptions import ResourceExhausted
 import json
 import os
+os.environ["ANONYMIZED_TELEMETRY"] = "False" 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# --- imports padrão ---
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,6 +39,7 @@ from groq import Groq
 from rouge_score import rouge_scorer
 from sacrebleu import corpus_bleu
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 
 try:
     from pypdf import PdfReader
@@ -52,6 +57,9 @@ DOCS_DIR = CORE_DIR / "docs"
 OUTPUT_DIR = CORE_DIR / "output"
 CHROMA_DIR = CORE_DIR / ".chroma"
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+# Evita deadlocks do tokenizers em ambientes com fork.
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 # Configurações de prompt alinhadas ao Streamlit original
 BASE_SYSTEM_PROMPT = (
@@ -206,6 +214,40 @@ MODES: List[ExperimentMode] = [
 VECTOR_BACKENDS = ["chroma", "simple"]
 LLM_PROVIDERS = ["groq", "gemini"]
 TELEMETRY_CHANNELS = ["status", "temperature", "vibration", "current", "rpm"]
+BERT_MAX_TOKENS = 450
+BERT_TOKENIZER_CACHE: Dict[str, AutoTokenizer] = {}
+
+def get_bert_tokenizer(model_name: str) -> AutoTokenizer | None:
+    """Carrega e cacheia o tokenizer correspondente ao modelo do BERTScore."""
+
+    if model_name in BERT_TOKENIZER_CACHE:
+        return BERT_TOKENIZER_CACHE[model_name]
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        BERT_TOKENIZER_CACHE[model_name] = tokenizer
+        return tokenizer
+    except Exception as exc:  # pragma: no cover
+        print(f"[WARN] Não foi possível carregar o tokenizer para {model_name}: {exc}")
+        return None
+
+
+def truncate_for_bertscore(text: str, tokenizer: AutoTokenizer | None, max_tokens: int = BERT_MAX_TOKENS) -> str:
+    """Limita o texto usado no BERTScore com base no tokenizer real do modelo."""
+
+    text = (text or "").strip()
+    if not text or not tokenizer:
+        # Sem tokenizer, fallback para split por palavras.
+        tokens = text.split()
+        if len(tokens) <= max_tokens:
+            return text
+        return " ".join(tokens[:max_tokens]) + " ..."
+
+    input_ids = tokenizer.encode(text, add_special_tokens=False)
+    if len(input_ids) <= max_tokens:
+        return text
+    trimmed_ids = input_ids[:max_tokens]
+    return tokenizer.decode(trimmed_ids, skip_special_tokens=True)
 
 
 def load_documents() -> List[Dict[str, str]]:
@@ -267,14 +309,20 @@ def prepare_vector_backends(embedder: SentenceTransformer, docs: List[Dict[str, 
 
     # Backend Chroma persistente para inspeção posterior
     CHROMA_DIR.mkdir(exist_ok=True)
-    client = PersistentClient(path=str(CHROMA_DIR))
+    client = PersistentClient(
+    path=str(CHROMA_DIR),
+    settings=Settings(anonymized_telemetry=False)
+)
+    collection_name = "industrial_dual_rag_slim"
+    if collection_name in [col.name for col in client.list_collections()]:
+        client.delete_collection(name=collection_name)
+
     collection = client.get_or_create_collection(
-        name="industrial_dual_rag_slim",
+        name=collection_name,
         embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         ),
     )
-    collection.delete(where={})
     collection.add(
         ids=[doc["id"] for doc in docs],
         documents=texts,
@@ -349,37 +397,50 @@ def call_groq(prompt: str) -> str:
 def call_gemini(prompt: str) -> str:
     api_key = os.getenv("GOOGLE_API_KEY")
     model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
+    
     if not api_key or not genai:
         raise RuntimeError("GOOGLE_API_KEY não configurada ou biblioteca indisponível.")
+    
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(model_name)
-    response = model.generate_content(prompt)
-    return (response.text or "").strip()
-
-
-def fallback_response(provider: str, scenario_id: int) -> str:
-    """Retorna um texto determinístico quando a chamada ao LLM falha."""
-    print(f"[WARN] Usando resposta simulada para {provider} no cenário {scenario_id}.")
-    return f"/* Simulated {provider} output */\n{REFERENCE_ANSWERS[scenario_id]}"
-
+    
+    # Configuração de Retry agressivo para Plano Gratuito
+    max_retries = 5  # Aumentamos para 5 tentativas
+    base_wait = 30   # Começa esperando 30 segundos
+    
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(prompt)
+            return (response.text or "").strip()
+        except ResourceExhausted:
+            # Backoff Exponencial: 30s -> 60s -> 120s -> 240s...
+            wait_time = base_wait * (2 ** attempt) 
+            print(f"\n[WARN] Cota do Gemini (429). Aguardando {wait_time}s antes da tentativa ({attempt+1}/{max_retries})...")
+            time.sleep(wait_time)
+        except Exception as e:
+            print(f"[ERRO] Erro inesperado no Gemini: {e}")
+            raise e
+            
+    raise RuntimeError("Falha no Gemini: Cota excedida mesmo após 5 tentativas e longas esperas.")
 
 def invoke_llm(provider: str, prompt: str, scenario_id: int) -> Tuple[str, float]:
     start = time.perf_counter()
-    try:
-        if provider == "groq":
-            text = call_groq(prompt)
-        elif provider == "gemini":
-            text = call_gemini(prompt)
-        else:
-            raise ValueError(f"Provedor desconhecido: {provider}")
-    except Exception as exc:  # pragma: no cover - caminho de fallback
-        print(f"[WARN] Falha ao consultar {provider}: {exc}")
-        text = fallback_response(provider, scenario_id)
+    if provider == "groq":
+        text = call_groq(prompt)
+    elif provider == "gemini":
+        text = call_gemini(prompt)
+    else:
+        raise ValueError(f"Provedor desconhecido: {provider}")
     latency_ms = (time.perf_counter() - start) * 1000
     return text, latency_ms
 
 
-def compute_metrics(candidate: str, reference: str, bert_scorer: BERTScorer) -> Dict[str, float]:
+def compute_metrics(
+    candidate: str,
+    reference: str,
+    bert_scorer: BERTScorer,
+    bert_tokenizer: AutoTokenizer | None,
+) -> Dict[str, float]:
     candidate = (candidate or "").strip()
     reference = (reference or "").strip()
     accuracy = 1.0 if candidate.lower() == reference.lower() else 0.0
@@ -400,7 +461,9 @@ def compute_metrics(candidate: str, reference: str, bert_scorer: BERTScorer) -> 
         print(f"[WARN] Falha ROUGE-L: {exc}")
 
     try:
-        _, _, f1 = bert_scorer.score([candidate], [reference])
+        candidate_trimmed = truncate_for_bertscore(candidate, bert_tokenizer)
+        reference_trimmed = truncate_for_bertscore(reference, bert_tokenizer)
+        _, _, f1 = bert_scorer.score([candidate_trimmed], [reference_trimmed])
         bert_f1 = float(f1.mean().item() * 100)
     except Exception as exc:  # pragma: no cover
         print(f"[WARN] Falha BERTScore: {exc}")
@@ -442,6 +505,22 @@ def plot_metric(df: pd.DataFrame, metric: str, output_dir: Path):
     print(f"[INFO] Gráfico salvo em {output_path.relative_to(CORE_DIR)}")
 
 
+def build_bert_scorer(model_name: str) -> Tuple[BERTScorer, AutoTokenizer | None]:
+    """Tenta carregar o BERTScore com baseline e sincroniza o tokenizer para truncar entradas."""
+
+    tokenizer = get_bert_tokenizer(model_name)
+    try:
+        scorer = BERTScorer(lang="pt", model_type=model_name, rescale_with_baseline=True)
+        return scorer, tokenizer
+    except KeyError:
+        print(
+            "[WARN] Modelo não previsto pelo BERTScore (sem baseline): "
+            f"{model_name}. Usando fallback sem baseline."
+        )
+        scorer = BERTScorer(lang=None, model_type=model_name, rescale_with_baseline=False, num_layers=12)
+        return scorer, tokenizer
+
+
 def run_pipeline():
     load_dotenv(dotenv_path=CORE_DIR / ".env", override=False)
     embed_model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
@@ -450,7 +529,7 @@ def run_pipeline():
     print(f"[INFO] Carregando embedder {embed_model_name}...")
     embedder = SentenceTransformer(embed_model_name)
     print(f"[INFO] Carregando BERTScore {bert_model_name}...")
-    bert_scorer = BERTScorer(lang="pt", model_type=bert_model_name, rescale_with_baseline=True)
+    bert_scorer, bert_tokenizer = build_bert_scorer(bert_model_name)
 
     docs = load_documents()
     stores = prepare_vector_backends(embedder, docs)
@@ -468,9 +547,22 @@ def run_pipeline():
 
                 telemetry_payload = scenario.telemetry if mode.use_telemetry else {}
                 for provider in LLM_PROVIDERS:
+                    if provider == "gemini": 
+                        time.sleep(10)
                     prompt = build_prompt(scenario.question, context, telemetry_payload, mode.label)
-                    response, latency_ms = invoke_llm(provider, prompt, scenario.scenario_id)
-                    metrics = compute_metrics(response, REFERENCE_ANSWERS[scenario.scenario_id], bert_scorer)
+                    try:
+                        response, latency_ms = invoke_llm(provider, prompt, scenario.scenario_id)
+                    except Exception as exc:
+                        raise RuntimeError(
+                            f"Falha ao consultar {provider} no cenário {scenario.scenario_id}."
+                            " Verifique chaves de API/conectividade e tente novamente."
+                        ) from exc
+                    metrics = compute_metrics(
+                        response,
+                        REFERENCE_ANSWERS[scenario.scenario_id],
+                        bert_scorer,
+                        bert_tokenizer,
+                    )
                     result_row = {
                         "scenario": scenario.scenario_id,
                         "scenario_name": scenario.name,
