@@ -135,6 +135,12 @@ docker-compose up --build
 - Chroma usa o `embedding_function` definido no backend, mas FAISS/Weaviate/Pinecone carregam explicitamente o modelo informado, garantindo comparações justas entre backends mesmo quando você alterna entre eles.
 - Documentamos essa decisão para atender ao critério experimental do professor: o estudo mantém o mesmo encoder enquanto troca apenas o armazenamento vetorial, isolando o efeito do backend.
 
+### Runner offline (`core/industrial_dual_rag.py`)
+
+- Coloque os manuais oficiais (PDF ou TXT) em `core/docs/`. O script agora lê ambos os formatos com `pypdf`, então dá para usar o manual ROMI completo e a ISO citada nos experimentos.
+- Preencha `core/.env` com as mesmas chaves do sistema principal. Para garantir consistência com a UI, os defaults são `GROQ_MODEL_NAME=llama-3.3-70b-versatile` e `GEMINI_MODEL_NAME=gemini-2.5-flash`, mas você pode sobrescrever se testar outra oferta.
+- O runner exporta `core/output/experiment_results.csv` e gráficos comparando Baseline × RAG × Dual RAG; basta executar `python core/industrial_dual_rag.py` depois de instalar `core/requirements.txt`.
+
 #### Outros encoders possíveis (SentenceTransformers):
 
 - all-mpnet-base-v2 – melhor recall geral, porém vetores de 768 dimensões (mais pesados).

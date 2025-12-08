@@ -1,0 +1,21 @@
+Manual Operacional Resumido – Torno ROMI T 240
+================================================
+
+# Seção 4.2 – Operação Normal
+- Temperatura recomendada do cabeçote: 25 °C a 65 °C.
+- Vibração RMS aceitável: até 2.8 mm/s para operação contínua (Zona A – ISO 20816).
+- Corrente de armadura típica em ciclo nominal: 10 A a 18 A.
+- Checklist diário: verificar nível de óleo, inspeção visual de cavacos e confirmar intertravamentos ativos.
+
+# Seção 5.1.1 – Falha Térmica
+- Alerta quando temperatura > 85 °C e parada imediata quando > 90 °C.
+- Procedimento: acionar E-STOP, manter eixo em repouso, abrir tampa de inspeção e remover obstruções no trocador de calor.
+- Resetar intertravamento somente após temperatura < 65 °C.
+
+# Seção 6.3 – Vibração e Desbalanceamento
+- Limite de vibração RMS para eixos produtivos: 10 mm/s (limiar de alerta).
+- Correção: reduzir rotação, remover cavacos presos, reapertar castanhas com torque nominal e, se necessário, executar balanceamento dinâmico do conjunto árvore-cartucho.
+
+# Recomendações Gerais
+- Documentar leituras de telemetria por turno.
+- Citar fonte e seção sempre que emitir diagnóstico técnico.
