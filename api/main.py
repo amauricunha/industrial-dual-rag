@@ -202,6 +202,13 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
     output_dir_path = Path(output_dir or SUMMARY_OUTPUT_DIR)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
+    # Remove artefatos HTML antigos para evitar reaproveitar gráficos defasados.
+    for old_chart in output_dir_path.glob("*.html"):
+        try:
+            old_chart.unlink()
+        except OSError as exc:
+            logger.warning("Falha ao remover gráfico antigo %s: %s", old_chart, exc)
+
     summary_csv_path = output_dir_path / "summary_metrics.csv"
     if not summary.empty:
         summary.to_csv(summary_csv_path, index=False)
@@ -216,6 +223,8 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
 
     def build_bar_chart(metric: str, title: str, filename: str, y_label: str):
         if summary.empty or metric not in summary.columns:
+            return
+        if summary[metric].dropna().empty:
             return
         fig = px.bar(
             summary,
@@ -234,6 +243,7 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
     build_bar_chart("accuracy", "Accuracy médio por cenário", "accuracy_by_mode.html", "Accuracy médio")
     build_bar_chart("bert_score_f1", "BERTScore F1 médio por cenário", "bert_score_by_mode.html", "BERTScore F1")
     build_bar_chart("bleu", "BLEU médio por cenário", "bleu_by_mode.html", "BLEU")
+    build_bar_chart("rouge_l", "ROUGE-L médio por cenário", "rouge_by_mode.html", "ROUGE-L")
 
     if "latency_ms" in df.columns:
         latency_x = "mode_used" if "mode_used" in df.columns else None

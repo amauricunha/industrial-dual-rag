@@ -7,41 +7,159 @@ Este arquivo fornece respostas de referência ("gabaritos") para validar as mét
 ## Como usar
 1. Escolha o cenário a ser avaliado (Normal, Falha Térmica ou Desbalanceamento).
 2. Injete a falha correspondente no simulador (ou mantenha em operação normal).
-3. Cole o gabarito abaixo no campo da UI.
+3. Copie o JSON do cenário abaixo e cole no campo da UI.
 4. Gere o diagnóstico. A API registrará as métricas comparando a resposta do LLM com o gabarito.
 
 ## Cenário 1 – Operação Normal
-```
-Estado geral: NORMAL
-Telemetria dentro das faixas especificadas na Seção 4.2 do manual (temperatura < 65 °C, vibração < 2.8 mm/s, corrente até 32 A). Recomenda-se apenas manter o ciclo de inspeção diário e verificar níveis de lubrificante do cabeçote.
+> Operação estável com telemetria típica de produção contínua. Use este gabarito quando nenhum alarme estiver ativo.
+
+```json
+{
+	"estado_geral": "NORMAL",
+	"avaliacao_telemetria": {
+		"temperatura": {
+			"valor": "45 °C",
+			"analise": "Dentro da faixa segura (<65 °C) descrita na Seção 4.2 do manual."
+		},
+		"vibracao_rms": {
+			"valor": "2.4 mm/s",
+			"analise": "Em zona A da ISO 20816 (até 2.5 mm/s), indicando operação suave."
+		},
+		"corrente_motor": {
+			"valor": "13 A",
+			"analise": "Consumo típico para ciclo nominal, sem picos de sobrecarga."
+		},
+		"rpm": {
+			"valor": "1 200 rpm",
+			"analise": "Rotação alinhada ao programa padrão de desbaste fino."
+		}
+	},
+	"diagnostico_resumido": "Máquina operando dentro dos parâmetros previstos; manter rotina preventiva.",
+	"causas_provaveis": [
+		"Processo estável com carga térmica e dinâmica controladas."
+	],
+	"acoes_recomendadas": [
+		"Seguir checklist diário de inspeção e verificar nível do lubrificante do cabeçote.",
+		"Registrar leitura de telemetria no prontuário do turno."
+	],
+	"limites_referenciados": [
+		{
+			"variavel": "Temperatura",
+			"limite": "< 65 °C",
+			"fonte_contexto": "Manual ROMI T 240 – Seção 4.2"
+		},
+		{
+			"variavel": "Vibração RMS",
+			"limite": "< 2.8 mm/s",
+			"fonte_contexto": "ISO 20816 / Seção 6.3"
+		}
+	],
+	"justificativa": "Todas as grandezas encontram-se dentro das faixas nominais, logo não há evidência de falha.",
+	"trechos_utilizados": [
+		"Manual ROMI T 240 – Seção 4.2",
+		"Checklist Preventivo Diário"
+	]
+}
 ```
 
 ## Cenário 2 – Falha Térmica / Superaquecimento
-```
-Estado geral: FALHA TÉRMICA
-Temperatura do cabeçote excede 90 °C, ultrapassando o limite de segurança descrito na Seção 5.1.1.
-Evidências:
-- Telemetria aponta aumento sustentado de temperatura apesar de rotações moderadas.
-- Manual cita que acima de 85 °C deve-se parar o eixo e acionar o circuito de refrigeração auxiliar.
-Ações recomendadas:
-1. Parar imediatamente o torno e manter o eixo principal em repouso.
-2. Abrir a tampa de inspeção e verificar obstrução do trocador de calor.
-3. Resetar o intertravamento térmico após o resfriamento e preencher o relatório de manutenção.
+> Use quando a telemetria indicar aquecimento acima do limite crítico. Este gabarito enfatiza o protocolo de parada segura.
+
+```json
+{
+	"estado_geral": "FALHA",
+	"avaliacao_telemetria": {
+		"temperatura": {
+			"valor": "92 °C",
+			"analise": "Excede o teto de 85 °C (Seção 5.1.1), exigindo parada imediata."
+		},
+		"vibracao_rms": {
+			"valor": "3.1 mm/s",
+			"analise": "Permanece em faixa aceitável; sintomas são predominantemente térmicos."
+		},
+		"corrente_motor": {
+			"valor": "15.8 A",
+			"analise": "Corrente elevada devido ao arraste térmico, corroborando sobrecarga."
+		},
+		"rpm": {
+			"valor": "900 rpm",
+			"analise": "Rotação moderada, logo o aquecimento não é causado por esforço extremo."
+		}
+	},
+	"diagnostico_resumido": "Superaquecimento do cabeçote indica falha térmica e risco ao intertravamento.",
+	"causas_provaveis": [
+		"Fluxo insuficiente no circuito de refrigeração auxiliar.",
+		"Ventoinha do motor obstruída por cavacos."
+	],
+	"acoes_recomendadas": [
+		"Parar imediatamente o torno e manter o eixo principal em repouso.",
+		"Abrir a tampa de inspeção e remover obstruções no trocador de calor.",
+		"Acionar refrigeração auxiliar e resetar o intertravamento apenas após o resfriamento."
+	],
+	"limites_referenciados": [
+		{
+			"variavel": "Temperatura do cabeçote",
+			"limite": "Alerta > 85 °C / Corte > 90 °C",
+			"fonte_contexto": "Manual ROMI T 240 – Seção 5.1.1"
+		}
+	],
+	"justificativa": "A temperatura acima do limite crítico caracteriza falha térmica independente dos demais sinais.",
+	"trechos_utilizados": [
+		"Manual ROMI T 240 – Protocolo de Superaquecimento",
+		"Registro de telemetria do cenário"
+	]
+}
 ```
 
 ## Cenário 3 – Desbalanceamento / Vibração Elevada
-```
-Estado geral: ALERTA DE DESBALANCEAMENTO
-Vibração RMS acima de 10 mm/s, ultrapassando o limite para eixos em rotação descrito na Seção 6.3.
-Evidências:
-- Telemetria indica pico de vibração com temperatura normal.
-- Manual recomenda comparação com tabela ISO 10816 antes de retomar a produção.
-Ações recomendadas:
-1. Reduzir a rotação para 50% e executar inspeção visual de fixação da placa.
-2. Conferir se há cavaco preso no prato e reapertar castanhas conforme torque nominal.
-3. Caso o nível permaneça alto, realizar balanceamento dinâmico do conjunto árvore-cartucho.
+> Use quando a vibração RMS ultrapassar o limite ISO com temperatura estável. Ideal para validar o modo dual RAG + telemetria.
+
+```json
+{
+	"estado_geral": "ALERTA",
+	"avaliacao_telemetria": {
+		"temperatura": {
+			"valor": "48 °C",
+			"analise": "Temperatura normal, descartando falha térmica simultânea."
+		},
+		"vibracao_rms": {
+			"valor": "11.2 mm/s",
+			"analise": "Acima do limite de 10 mm/s para eixos operacionais (Seção 6.3 / ISO 10816 zona D)."
+		},
+		"corrente_motor": {
+			"valor": "12.5 A",
+			"analise": "Sem sobrecorrente, reforçando que o problema é mecânico."
+		},
+		"rpm": {
+			"valor": "1 600 rpm",
+			"analise": "Alta rotação amplifica o desbalanceamento detectado."
+		}
+	},
+	"diagnostico_resumido": "Vibração excessiva caracteriza alerta de desbalanceamento do conjunto árvore-cartucho.",
+	"causas_provaveis": [
+		"Fixação inadequada da placa ou castanhas soltas.",
+		"Acúmulo de cavaco no prato comprometendo o centro de massa."
+	],
+	"acoes_recomendadas": [
+		"Reduzir a rotação para 50% e executar inspeção visual imediata.",
+		"Remover cavacos presos e reapertar castanhas com o torque especificado.",
+		"Realizar balanceamento dinâmico se o nível persistir após a limpeza."
+	],
+	"limites_referenciados": [
+		{
+			"variavel": "Vibração RMS",
+			"limite": "> 10 mm/s = alerta",
+			"fonte_contexto": "Manual ROMI T 240 – Seção 6.3 / ISO 10816"
+		}
+	],
+	"justificativa": "Somente a vibração excede o limite; demais grandezas permanecem normais, apontando desbalanceamento localizado.",
+	"trechos_utilizados": [
+		"Manual ROMI T 240 – Tabela de vibração",
+		"ISO 10816"
+	]
+}
 ```
 
 ## Personalização
-- Se incluir outras falhas (ex.: queda de corrente, ruído no spindle), replique este formato com **Estado geral → Evidências → Ações** citando a seção do manual e limites numéricos.
-- Para testes com textos em inglês, traduza o gabarito e mantenha as métricas; BLEU/ROUGE continuarão válidas.
+- Se incluir outras falhas (ex.: queda de corrente, ruído no spindle), replique o JSON acima mantendo todas as chaves e populando os campos com números do manual.
+- Para testes com textos em inglês, traduza os valores e análises mantendo o mesmo formato estrutural para preservar as métricas BLEU/ROUGE/BERTScore.
