@@ -1,8 +1,8 @@
 {
-  "generated_at": "2025-12-08T11:56:17.421614+00:00",
-  "record_count": 28,
+  "generated_at": "2025-12-08T22:58:32.354155+00:00",
+  "record_count": 12,
   "summary_rows": 3,
-  "recent_window": 28,
+  "recent_window": 12,
   "output_dir": "/app/data/summaries",
   "artifacts": {
     "summary_csv": "/app/data/summaries/summary_metrics.csv",

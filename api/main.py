@@ -1,7 +1,7 @@
 """FastAPI backend that implements the full Dual-Context RAG workflow.
 
 Highlights for the final deliverable:
-        * Problem/use case: responde dúvidas de operação para um torno CNC.
+        * Problem/use case: responde dúvidas de operação para um torno.
         * Model usage: executa chunking + embeddings + consulta em diferentes
             bancos vetoriais antes de chamar um LLM generativo (Groq, Gemini, Ollama).
         * Experimentos: mede accuracy/BLEU/ROUGE, tokens e latência; gera relatórios
@@ -388,7 +388,13 @@ def upsert_chunks_to_backend(
         client = weaviate.Client(url=url, auth_client_secret=auth)
         index_name = os.getenv("WEAVIATE_CLASS", "IndustrialManual")
         embedding = get_embedding_function(embedding_model)
-        store = WeaviateVectorStore(client=client, index_name=index_name, text_key="text", embedding=embedding)
+        store = WeaviateVectorStore(
+            client=client,
+            index_name=index_name,
+            text_key="text",
+            embedding=embedding,
+            by_text=False,
+        )
         store.add_texts(chunks, metadatas=metadatas)
         return
 
@@ -466,7 +472,13 @@ def query_backend(
         client = weaviate.Client(url=url, auth_client_secret=auth)
         index_name = os.getenv("WEAVIATE_CLASS", "IndustrialManual")
         embedding = get_embedding_function(embedding_model)
-        store = WeaviateVectorStore(client=client, index_name=index_name, text_key="text", embedding=embedding)
+        store = WeaviateVectorStore(
+            client=client,
+            index_name=index_name,
+            text_key="text",
+            embedding=embedding,
+            by_text=False,
+        )
         docs = store.similarity_search(question, k=top_k)
         return [doc.page_content for doc in docs], [doc.metadata for doc in docs]
 
