@@ -7,3 +7,4 @@ paho-mqtt
 sacrebleu
 rouge-score
 bert-score
+transformers

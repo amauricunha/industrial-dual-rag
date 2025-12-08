@@ -19,10 +19,11 @@ from queue import Queue, Empty
 from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, Dict
 from sacrebleu import corpus_bleu
 from rouge_score import rouge_scorer
 from bert_score import BERTScorer
+from transformers import AutoTokenizer
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
@@ -86,6 +87,9 @@ DEFAULT_RESPONSE_FORMAT_TEXT = json.dumps(DEFAULT_RESPONSE_FORMAT, indent=2, ens
 DEFAULT_LLM_TIMEOUT = int(os.getenv("OLLAMA_CHAT_TIMEOUT", "180"))
 BERT_SCORE_MODEL = os.getenv("BERT_SCORE_MODEL", "neuralmind/bert-base-portuguese-cased")
 BERT_SCORE_FALLBACK_MODEL = "xlm-roberta-base"
+BERT_MAX_TOKENS = int(os.getenv("BERT_MAX_TOKENS", "450"))
+BERT_TOKENIZER_CACHE: Dict[str, AutoTokenizer] = {}
+BERT_SCORE_ACTIVE_MODEL: Optional[str] = None
 TELEMETRY_SIGNAL_OPTIONS = [
     ("status", "Status da máquina"),
     ("temperature", "Temperatura (°C)"),
@@ -95,6 +99,94 @@ TELEMETRY_SIGNAL_OPTIONS = [
 TELEMETRY_SIGNAL_DEFAULTS = [opt[0] for opt in TELEMETRY_SIGNAL_OPTIONS]
 
 st.set_page_config(page_title="Industrial Dual-RAG Lab", layout="wide")
+
+
+def get_bert_tokenizer(model_name: str) -> AutoTokenizer | None:
+    """Carrega e cacheia o tokenizer correspondente ao modelo usado pelo BERTScore."""
+
+    if not model_name:
+        return None
+    if model_name in BERT_TOKENIZER_CACHE:
+        return BERT_TOKENIZER_CACHE[model_name]
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        BERT_TOKENIZER_CACHE[model_name] = tokenizer
+        return tokenizer
+    except Exception as exc:
+        logger.warning("Falha ao carregar tokenizer %s: %s", model_name, exc)
+        return None
+
+
+def get_active_bert_tokenizer() -> AutoTokenizer | None:
+    """Retorna o tokenizer associado ao modelo efetivo do BERTScore (com fallback)."""
+
+    active_model = BERT_SCORE_ACTIVE_MODEL or BERT_SCORE_MODEL or BERT_SCORE_FALLBACK_MODEL
+    tokenizer = get_bert_tokenizer(active_model)
+    if tokenizer or active_model == BERT_SCORE_FALLBACK_MODEL:
+        return tokenizer
+    return get_bert_tokenizer(BERT_SCORE_FALLBACK_MODEL)
+
+
+def truncate_for_bertscore(text: str, tokenizer: AutoTokenizer | None, max_tokens: int = BERT_MAX_TOKENS) -> str:
+    """Limita o texto enviado ao BERTScore para evitar estouro da janela do modelo."""
+
+    text = (text or "").strip()
+    if not text:
+        return ""
+
+    if not tokenizer:
+        tokens = text.split()
+        if len(tokens) <= max_tokens:
+            return text
+        return " ".join(tokens[:max_tokens]) + " ..."
+
+    input_ids = tokenizer.encode(text, add_special_tokens=False)
+    if len(input_ids) <= max_tokens:
+        return text
+    trimmed_ids = input_ids[:max_tokens]
+    return tokenizer.decode(trimmed_ids, skip_special_tokens=True)
+
+
+def _instantiate_bert_scorer(target_model: str) -> BERTScorer:
+    """Tenta carregar o BERTScore usando baseline; se não existir, executa sem rescale."""
+
+    try:
+        return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
+    except KeyError:
+        logger.warning(
+            "Modelo %s não possui baseline oficial no BERTScore; prosseguindo sem rescale.",
+            target_model,
+        )
+        return BERTScorer(
+            lang=None,
+            model_type=target_model,
+            rescale_with_baseline=False,
+            num_layers=12,
+        )
+
+
+@st.cache_resource
+def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
+    target_model = model_name or BERT_SCORE_FALLBACK_MODEL
+    global BERT_SCORE_ACTIVE_MODEL
+    try:
+        scorer = _instantiate_bert_scorer(target_model)
+        BERT_SCORE_ACTIVE_MODEL = target_model
+        get_bert_tokenizer(target_model)
+        return scorer
+    except Exception as exc:
+        if target_model == BERT_SCORE_FALLBACK_MODEL:
+            raise
+        logger.warning(
+            "Falha ao inicializar BERTScore com %s (%s). Usando fallback %s.",
+            target_model,
+            exc,
+            BERT_SCORE_FALLBACK_MODEL,
+        )
+        fallback_scorer = _instantiate_bert_scorer(BERT_SCORE_FALLBACK_MODEL)
+        BERT_SCORE_ACTIVE_MODEL = BERT_SCORE_FALLBACK_MODEL
+        get_bert_tokenizer(BERT_SCORE_FALLBACK_MODEL)
+        return fallback_scorer
 
 # --- Estado ---
 # Mantemos os parâmetros do experimento no session_state para permitir que o
@@ -154,40 +246,6 @@ if "bert_scorer_ready" not in st.session_state:
 def get_mqtt_queue() -> Queue:
     return Queue()
 
-
-def _instantiate_bert_scorer(target_model: str) -> BERTScorer:
-    """Tenta carregar o BERTScore usando baseline; se não existir, executa sem rescale."""
-
-    try:
-        return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
-    except KeyError:
-        logger.warning(
-            "Modelo %s não possui baseline oficial no BERTScore; prosseguindo sem rescale.",
-            target_model,
-        )
-        return BERTScorer(
-            lang=None,
-            model_type=target_model,
-            rescale_with_baseline=False,
-            num_layers=12,
-        )
-
-
-@st.cache_resource
-def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
-    target_model = model_name or BERT_SCORE_FALLBACK_MODEL
-    try:
-        return _instantiate_bert_scorer(target_model)
-    except Exception as exc:
-        if target_model == BERT_SCORE_FALLBACK_MODEL:
-            raise
-        logger.warning(
-            "Falha ao inicializar BERTScore com %s (%s). Usando fallback %s.",
-            target_model,
-            exc,
-            BERT_SCORE_FALLBACK_MODEL,
-        )
-        return _instantiate_bert_scorer(BERT_SCORE_FALLBACK_MODEL)
 
 def build_mqtt_client():
     try:
@@ -366,7 +424,10 @@ def compute_text_metrics(candidate: str, reference: str):
 
     try:
         scorer = get_bert_scorer()
-        _, _, f1 = scorer.score([candidate], [reference])
+        tokenizer = get_active_bert_tokenizer()
+        candidate_trimmed = truncate_for_bertscore(candidate, tokenizer)
+        reference_trimmed = truncate_for_bertscore(reference, tokenizer)
+        _, _, f1 = scorer.score([candidate_trimmed], [reference_trimmed])
         bert_f1_score = float(f1.mean().item() * 100)
     except Exception as exc:
         logger.warning("Falha ao calcular BERTScore: %s", exc)
@@ -397,7 +458,7 @@ def render_vector_preview(label: str, vector: list[float], limit: int = 16):
                 "valor": vector,
             },
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
 # --- CSS Customizado para Painéis ---
@@ -427,7 +488,7 @@ with st.sidebar:
     api_key = st.text_input("API Key", type="password", help="Opcional: substitui a chave configurada no backend.")
 
     st.subheader("2. Seleção do Modelo")
-    refresh_models = st.button("🔄 Atualizar modelos disponíveis", use_container_width=True)
+    refresh_models = st.button("🔄 Atualizar modelos disponíveis", width="stretch")
     if refresh_models:
         st.session_state.model_cache_key = None
         st.session_state.model_cache = []
@@ -587,7 +648,7 @@ with st.sidebar:
     st.caption("Gere arquivos consolidados dos testes registrados em /app/data/experiment_logs.csv.")
     # Botão pedido na etapa de Experimentos: dispara o endpoint que lê o CSV e
     # exporta tabelas/gráficos prontos para o relatório científico.
-    if st.button("📊 Gerar resumo automático", use_container_width=True):
+    if st.button("📊 Gerar resumo automático", width="stretch"):
         with st.spinner("Consolidando métricas e gráficos..."):
             try:
                 resp = requests.post(f"{API_URL}/experiments/summarize", json={}, timeout=180)
@@ -650,11 +711,11 @@ col_ctrl_1, col_ctrl_2 = st.columns([1, 2])
 with col_ctrl_1:
     st.subheader("🎮 Simulador de Falhas")
     st.caption("Injete anomalias para testar o diagnóstico:")
-    if st.button("✅ Operação Normal", use_container_width=True):
+    if st.button("✅ Operação Normal", width="stretch"):
         publish_command("NORMAL")
-    if st.button("🔥 Falha Térmica", use_container_width=True):
+    if st.button("🔥 Falha Térmica", width="stretch"):
         publish_command("HIGH_TEMP")
-    if st.button("〰️ Desbalanceamento", use_container_width=True):
+    if st.button("〰️ Desbalanceamento", width="stretch"):
         publish_command("HIGH_VIBRATION")
 
 with col_ctrl_2:
@@ -775,7 +836,7 @@ if st.button("Gerar Relatório de Diagnóstico", type="primary"):
                         elapsed_ms = (time.perf_counter() - start_time) * 1000
                         telemetry_snapshot = data.get("debug", {}).get("telemetry_used") or st.session_state.telemetry
                         vector_debug = data.get("vector_debug") or data.get("debug", {}).get("vector_debug")
-                        accuracy = bleu = rouge_l = None
+                        accuracy = bleu = rouge_l = bert_f1 = None
                         if reference_answer.strip():
                             accuracy, bleu, rouge_l, bert_f1 = compute_text_metrics(
                                 data.get("response", ""),
