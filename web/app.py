@@ -33,7 +33,11 @@ LOG_MQTT_EVENTS = os.getenv("LOG_MQTT_EVENTS", "true").lower() == "true"
 BASE_DIR = Path(__file__).resolve().parent
 GABARITO_LIBRARY_PATH = Path(os.getenv("GABARITO_LIBRARY_PATH", BASE_DIR / "docs" / "gabaritos.json"))
 
+# ========= Etapa Frontend 0 | Configuração Base =========
+
 def env_or_default(*keys, default=None):
+    """[Etapa: Configuração Base] Entrada: chaves possíveis + fallback.
+    Saída: valor da primeira variável de ambiente disponível ou o default."""
     for key in keys:
         value = os.getenv(key)
         if value:
@@ -41,7 +45,7 @@ def env_or_default(*keys, default=None):
     return default
 
 
-# --- Setup ---
+# ========= Etapa Frontend 1 | Setup de Conexões =========
 API_URL = os.getenv("API_URL", "http://api:8000")
 MQTT_BROKER = env_or_default("MQTT_BROKER_ADDRESS", "MQTT_BROKER", default="test.mosquitto.org")
 MQTT_PORT = int(env_or_default("MQTT_BROKER_PORT", default=1883))
@@ -89,8 +93,12 @@ DEFAULT_RESPONSE_FORMAT = {
 DEFAULT_RESPONSE_FORMAT_TEXT = json.dumps(DEFAULT_RESPONSE_FORMAT, indent=2, ensure_ascii=False)
 
 
+# ========= Etapa Frontend 2 | Biblioteca de Gabaritos =========
+
+
 def load_reference_answer_library(path: Path = GABARITO_LIBRARY_PATH) -> Dict[str, Dict[str, Any]]:
-    """Carrega o arquivo JSON de gabaritos diretamente do volume compartilhado."""
+    """[Etapa: Biblioteca de Gabaritos] Entrada: caminho do JSON compartilhado.
+    Saída: dicionário de presets usados nos testes automatizados."""
 
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -106,6 +114,8 @@ def load_reference_answer_library(path: Path = GABARITO_LIBRARY_PATH) -> Dict[st
 
 
 def format_reference_answer_payload(preset: Dict[str, Any]) -> str:
+    """[Etapa: Biblioteca de Gabaritos] Entrada: preset individual (dict).
+    Saída: string JSON formatada que abastece o campo de referência."""
     payload = preset.get("answer")
     if isinstance(payload, dict):
         return json.dumps(payload, indent=2, ensure_ascii=False)
@@ -115,6 +125,8 @@ def format_reference_answer_payload(preset: Dict[str, Any]) -> str:
 
 
 def apply_reference_answer_preset(preset_key: str, library: Dict[str, Dict[str, Any]]) -> bool:
+    """[Etapa: Biblioteca de Gabaritos] Entrada: chave solicitada + biblioteca.
+    Saída: True se o gabarito foi aplicado ao session_state, False caso contrário."""
     preset = library.get(preset_key)
     if not preset:
         st.warning(f"Nenhum gabarito cadastrado para '{preset_key}'.")
@@ -146,8 +158,12 @@ TELEMETRY_SIGNAL_DEFAULTS = [opt[0] for opt in TELEMETRY_SIGNAL_OPTIONS]
 st.set_page_config(page_title="Industrial Dual-RAG Lab", layout="wide")
 
 
+# ========= Etapa Frontend 3 | Métricas de Similaridade =========
+
+
 def get_bert_tokenizer(model_name: str) -> AutoTokenizer | None:
-    """Carrega e cacheia o tokenizer correspondente ao modelo usado pelo BERTScore."""
+    """[Etapa: Métricas de Similaridade] Entrada: nome do modelo BERTScore.
+    Saída: tokenizer cacheado usado para truncar respostas e gabaritos."""
 
     if not model_name:
         return None
@@ -163,7 +179,8 @@ def get_bert_tokenizer(model_name: str) -> AutoTokenizer | None:
 
 
 def get_active_bert_tokenizer() -> AutoTokenizer | None:
-    """Retorna o tokenizer associado ao modelo efetivo do BERTScore (com fallback)."""
+    """[Etapa: Métricas de Similaridade] Sem entrada.
+    Saída: tokenizer do modelo ativo (ou fallback) para limitar tokens."""
 
     active_model = BERT_SCORE_ACTIVE_MODEL or BERT_SCORE_MODEL or BERT_SCORE_FALLBACK_MODEL
     tokenizer = get_bert_tokenizer(active_model)
@@ -173,7 +190,8 @@ def get_active_bert_tokenizer() -> AutoTokenizer | None:
 
 
 def truncate_for_bertscore(text: str, tokenizer: AutoTokenizer | None, max_tokens: int = BERT_MAX_TOKENS) -> str:
-    """Limita o texto enviado ao BERTScore para evitar estouro da janela do modelo."""
+    """[Etapa: Métricas de Similaridade] Entrada: texto candidato + tokenizer/opções.
+    Saída: string truncada respeitando o limite de tokens configurado."""
 
     text = (text or "").strip()
     if not text:
@@ -193,7 +211,8 @@ def truncate_for_bertscore(text: str, tokenizer: AutoTokenizer | None, max_token
 
 
 def _instantiate_bert_scorer(target_model: str) -> BERTScorer:
-    """Tenta carregar o BERTScore usando baseline; se não existir, executa sem rescale."""
+    """[Etapa: Métricas de Similaridade] Entrada: nome do modelo alvo.
+    Saída: instância BERTScorer pronta, com fallback e logs controlados."""
 
     try:
         return BERTScorer(lang="pt", model_type=target_model, rescale_with_baseline=True)
@@ -212,6 +231,8 @@ def _instantiate_bert_scorer(target_model: str) -> BERTScorer:
 
 @st.cache_resource
 def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
+    """[Etapa: Métricas de Similaridade] Entrada: nome preferido do modelo.
+    Saída: instância BERTScorer cacheada para uso imediato no Streamlit."""
     target_model = model_name or BERT_SCORE_FALLBACK_MODEL
     global BERT_SCORE_ACTIVE_MODEL
     try:
@@ -233,7 +254,7 @@ def get_bert_scorer(model_name: str = BERT_SCORE_MODEL):
         get_bert_tokenizer(BERT_SCORE_FALLBACK_MODEL)
         return fallback_scorer
 
-# --- Estado ---
+# ========= Etapa Frontend 4 | Estado Compartilhado =========
 # Mantemos os parâmetros do experimento no session_state para permitir que o
 # professor reproduza rapidamente diferentes combinações de prompts/sensores.
 if "telemetry" not in st.session_state:
@@ -290,13 +311,20 @@ if "bert_scorer_ready" not in st.session_state:
         except Exception as exc:
             st.session_state.bert_scorer_ready = False
             st.warning(f"Falha ao carregar BERTScore: {exc}")
-    
+
+
+# ========= Etapa Frontend 5 | Integração MQTT =========
+
 @st.cache_resource
 def get_mqtt_queue() -> Queue:
+    """[Etapa: Integração MQTT] Sem entrada.
+    Saída: fila thread-safe compartilhada entre callbacks e a UI."""
     return Queue()
 
 
 def build_mqtt_client():
+    """[Etapa: Integração MQTT] Sem entrada.
+    Saída: instância do cliente Paho (API v2 se disponível)."""
     try:
         return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     except AttributeError:
@@ -306,6 +334,8 @@ mqtt_queue: "Queue[dict]" = get_mqtt_queue()
 
 # --- MQTT Loop (Background) ---
 def on_message(client, userdata, msg):
+    """[Etapa: Integração MQTT] Entrada: payload recebido do broker.
+    Saída: atualiza a fila compartilhada com a última telemetria."""
     try:
         payload_text = msg.payload.decode()
         if LOG_MQTT_EVENTS:
@@ -317,6 +347,8 @@ def on_message(client, userdata, msg):
 
 @st.cache_resource
 def start_mqtt():
+    """[Etapa: Integração MQTT] Sem entrada.
+    Saída: cliente conectado e em loop, pronto para alimentar o dashboard."""
     if not MQTT_BROKER or not MQTT_TOPIC_DATA:
         st.session_state.mqtt_error = "Variáveis de ambiente MQTT não configuradas."
         return None
@@ -350,6 +382,8 @@ mqtt_client = start_mqtt()
 
 
 def pump_mqtt_queue():
+    """[Etapa: Integração MQTT] Sem entrada.
+    Saída: booleano indicando se o dashboard foi atualizado com novos dados."""
     updated = False
     while True:
         try:
@@ -364,7 +398,12 @@ def pump_mqtt_queue():
         updated = True
     return updated
 
+
+# ========= Etapa Frontend 6 | Comunicação com a API FastAPI =========
+
 def fetch_available_models(provider: str, api_key: str | None):
+    """[Etapa: Comunicação com API] Entrada: provedor selecionado + chave opcional.
+    Saída: lista de modelos retornada pelo endpoint /llm/models."""
     params = {"provider": provider}
     if api_key:
         params["api_key"] = api_key
@@ -385,6 +424,8 @@ def fetch_available_models(provider: str, api_key: str | None):
 
 
 def get_cached_models(provider: str, api_key: str | None):
+    """[Etapa: Comunicação com API] Entrada: provedor/chave.
+    Saída: lista de modelos reaproveitada do cache de sessão para evitar chamadas."""
     cache_key = f"{provider}:{api_key or 'env'}"
     if st.session_state.model_cache_key == cache_key and st.session_state.model_cache:
         return st.session_state.model_cache
@@ -396,6 +437,8 @@ def get_cached_models(provider: str, api_key: str | None):
 
 
 def publish_command(command: str):
+    """[Etapa: Comunicação com API] Entrada: comando textual (NORMAL/HIGH_TEMP etc.).
+    Saída: bool indicando se a publicação MQTT foi realizada."""
     if not mqtt_client:
         st.warning("Broker MQTT não conectado.")
         return False
@@ -408,6 +451,8 @@ def publish_command(command: str):
     return True
 
 
+# ========= Etapa Frontend 7 | Utilidades de Experimentos =========
+
 def persist_experiment_log(question: str, scenario: int, response_payload: dict, llm_provider: str,
                            llm_model: str, telemetry_snapshot: dict, latency_ms: float,
                            reference_answer: Optional[str] = None,
@@ -419,7 +464,8 @@ def persist_experiment_log(question: str, scenario: int, response_payload: dict,
                            prompt_tokens: Optional[int] = None,
                            response_tokens: Optional[int] = None,
                            vector_debug: Optional[dict] = None):
-    """Dispara o endpoint da API para registrar métricas exigidas no relatório."""
+    """[Etapa: Utilidades de Experimentos] Entrada: todas as métricas coletadas.
+    Saída: chamada REST para /experiments/log e aviso em caso de falha."""
     log_body = {
         "question": question,
         "scenario": scenario,
@@ -449,6 +495,8 @@ def persist_experiment_log(question: str, scenario: int, response_payload: dict,
 
 
 def compute_text_metrics(candidate: str, reference: str):
+    """[Etapa: Utilidades de Experimentos] Entrada: resposta do LLM e gabarito.
+    Saída: tupla (accuracy, BLEU, ROUGE-L, BERTScore) ou None se sem referência."""
     reference = (reference or "").strip()
     candidate = (candidate or "").strip()
     if not reference:
@@ -485,6 +533,8 @@ def compute_text_metrics(candidate: str, reference: str):
 
 
 def format_vector_preview(vector: list[float], limit: int = 16) -> str:
+    """[Etapa: Utilidades de Experimentos] Entrada: vetor alto-dimensional.
+    Saída: string truncada para facilitar inspeção manual."""
     if not vector:
         return "[]"
     clipped = vector[:limit]
@@ -495,6 +545,8 @@ def format_vector_preview(vector: list[float], limit: int = 16) -> str:
 
 
 def render_vector_preview(label: str, vector: list[float], limit: int = 16):
+    """[Etapa: Utilidades de Experimentos] Entrada: rótulo + vetor completo.
+    Saída: elementos Streamlit (caption/código/dataframe) para debug vetorial."""
     if not vector:
         st.caption(f"{label}: sem dados disponíveis.")
         return
@@ -510,7 +562,7 @@ def render_vector_preview(label: str, vector: list[float], limit: int = 16):
             width="stretch",
         )
 
-# --- CSS Customizado para Painéis ---
+# ========= Etapa Frontend 8 | Composição Visual da UI =========
 st.markdown("""
 <style>
     .metric-card {

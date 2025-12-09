@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-12-09T11:06:28.152710+00:00",
+  "generated_at": "2025-12-09T13:56:18.823431+00:00",
   "record_count": 40,
   "summary_rows": 3,
   "recent_window": 40,
@@ -12,7 +12,13 @@
       "bert_score_f1": "/app/data/summaries/bert_score_by_mode.html",
       "bleu": "/app/data/summaries/bleu_by_mode.html",
       "rouge_l": "/app/data/summaries/rouge_by_mode.html",
-      "latency": "/app/data/summaries/latency_distribution.html",
+      "llm_comparison": "/app/data/summaries/llm_comparison_by_scenario.html",
+      "vector_backend": "/app/data/summaries/vector_backend_by_scenario.html",
+      "quality_by_simulation": "/app/data/summaries/quality_by_simulation_state.html",
+      "latency_by_scenario": "/app/data/summaries/latency_by_scenario.html",
+      "latency": "/app/data/summaries/latency_by_scenario.html",
+      "tokens_by_scenario": "/app/data/summaries/tokens_by_scenario.html",
+      "llm_metrics_by_scenario": "/app/data/summaries/llm_metrics_by_scenario.html",
       "bert_score_f1_history": "/app/data/summaries/bert_score_history.html"
     }
   }

@@ -17,7 +17,7 @@ Este documento resume como os principais componentes da aplicação (API FastAPI
 - `reindex_manuals` reutiliza PDFs já salvos para regenerar embeddings quando o usuário altera backend ou parâmetros de chunking.
 
 ### 1.3 Consulta vetorial e debug
-- `query_backend` aplica busca semântica com `top_k=5` em todos os backends. No Chroma usamos `collection.query(..., n_results=top_k)`, nos demais LangChain faz `similarity_search(..., k=top_k)`.
+- `query_backend` aplica busca semântica com `top_k=3` em todos os backends. No Chroma usamos `collection.query(..., n_results=top_k)`, nos demais LangChain faz `similarity_search(..., k=top_k)`.
 - `build_vector_debug` reconstrói os vetores da pergunta e dos chunks recuperados usando o mesmo `HuggingFaceEmbeddings`, computa similaridade cosseno (`cosine_similarity`) e envia previews + embeddings completos no payload de resposta e no CSV (quando logging está ativo).
 
 ### 1.4 Telemetria e montagem do prompt

@@ -61,6 +61,8 @@ logger = logging.getLogger("industrial-dual-rag-api")
 
 app = FastAPI(title="Industrial Dual-RAG API")
 
+# ========= Etapa 0 | Configuração Global & Persistência =========
+
 DEFAULT_BASE_SYSTEM = (
     "Você é um Engenheiro Sênior de Diagnóstico Industrial especializado em máquinas de manufatura, com foco em tornos "
     "mecânicos. Analise condições de operação e identifique falhas com base na telemetria e no conteúdo técnico fornecido. "
@@ -86,6 +88,17 @@ DEFAULT_CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP_DEFAULT", "200"))
 DEFAULT_EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL_DEFAULT", "all-MiniLM-L6-v2")
 SUPPORTED_VECTOR_BACKENDS = {"chroma", "faiss", "weaviate", "pinecone"}
 DEFAULT_TELEMETRY_KEYS = ["status", "temperature", "vibration", "current"]
+SCENARIO_LABELS = {
+    1: "Zero-Shot",
+    2: "RAG Estático",
+    3: "RAG Dual",
+}
+DEFAULT_SCENARIO_LABEL = "Outro Cenário"
+SIMULATION_LABELS = {
+    "normal": "Normal",
+    "temperatura": "Temperatura",
+    "vibração": "Vibração",
+}
 
 _embedding_cache: Dict[str, HuggingFaceEmbeddings] = {}
 
@@ -99,16 +112,71 @@ chroma_client = chromadb.PersistentClient(path=DB_DIR)
 embedding_func = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 collection = chroma_client.get_or_create_collection(name="industrial_manuals", embedding_function=embedding_func)
 
+# ========= Etapa 1 | Normalização de Experimentos =========
+
+
+def resolve_scenario_label(value: Any) -> str:
+    """[Etapa: Normalização de Experimentos] Entrada: identificador do cenário vindo do CSV.
+    Saída: rótulo amigável reutilizado nos dashboards."""
+
+    if value is None:
+        return DEFAULT_SCENARIO_LABEL
+    try:
+        numeric = int(value)
+        if numeric in SCENARIO_LABELS:
+            return SCENARIO_LABELS[numeric]
+    except (TypeError, ValueError):
+        pass
+    # Caso já venha como string significativa, retornamos padronizando capitalização.
+    text_value = str(value).strip()
+    if not text_value:
+        return DEFAULT_SCENARIO_LABEL
+    return text_value
+
+
+def classify_simulation_state(raw_telemetry: Any) -> str:
+    """[Etapa: Normalização de Experimentos] Entrada: payload de telemetria cru (dict/JSON).
+    Saída: classe resumida (Normal/Temperatura/Vibração) para comparação."""
+
+    payload: Dict[str, Any] = {}
+    if isinstance(raw_telemetry, dict):
+        payload = raw_telemetry
+    elif isinstance(raw_telemetry, str):
+        try:
+            payload = json.loads(raw_telemetry)
+        except json.JSONDecodeError:
+            payload = {}
+
+    status = str(payload.get("status", "")).lower()
+    temperature = payload.get("temperature")
+    vibration = payload.get("vibration")
+
+    if "temp" in status:
+        return "Temperatura"
+    if "vib" in status:
+        return "Vibração"
+    if isinstance(temperature, (int, float)) and temperature >= 60:
+        return "Temperatura"
+    if isinstance(vibration, (int, float)) and vibration >= 8:
+        return "Vibração"
+    if status:
+        return "Normal"
+    return "Normal"
+
+
+# ========= Etapa 2 | Ingestão RAG (Embeddings, Chunking, PDFs) =========
 
 def get_embedding_function(model_name: str) -> HuggingFaceEmbeddings:
-    """Fornece o embedder solicitado reutilizando cache para evitar reloads caros."""
+    """[Etapa: Ingestão RAG] Entrada: nome do modelo SentenceTransformer solicitado.
+    Saída: instância cacheada de HuggingFaceEmbeddings pronta para uso."""
     if model_name not in _embedding_cache:
         _embedding_cache[model_name] = HuggingFaceEmbeddings(model_name=model_name)
     return _embedding_cache[model_name]
 
 
 def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
-    """Divide documentos longos em janelas controladas (chunking obrigatório para RAG)."""
+    """[Etapa: Ingestão RAG] Entrada: texto bruto + parâmetros de chunk size/overlap.
+    Saída: lista de trechos prontos para indexação vetorial."""
     if chunk_size <= 0:
         raise HTTPException(400, "chunk_size deve ser maior que zero.")
     overlap = max(0, min(overlap, chunk_size - 1))
@@ -127,7 +195,8 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
 
 
 def normalize_telemetry_keys(selected: Optional[List[str]]) -> List[str]:
-    """Limita sinais de telemetria às chaves suportadas mantendo ordem determinística."""
+    """[Etapa: Telemetria] Entrada: lista escolhida pelo usuário na UI.
+    Saída: subconjunto ordenado contendo apenas sinais suportados pelo prompt."""
     if not selected:
         return DEFAULT_TELEMETRY_KEYS.copy()
     normalized = []
@@ -141,7 +210,8 @@ def normalize_telemetry_keys(selected: Optional[List[str]]) -> List[str]:
 
 
 def extract_text_from_pdf(file_path: str) -> str:
-    """Lê um PDF e retorna o texto concatenado das páginas."""
+    """[Etapa: Ingestão RAG] Entrada: caminho do PDF carregado.
+    Saída: texto concatenado pronto para chunking; lança HTTPException em falhas."""
     try:
         reader = pypdf.PdfReader(file_path)
     except Exception as exc:
@@ -161,8 +231,11 @@ def extract_text_from_pdf(file_path: str) -> str:
     return joined
 
 
+# ========= Etapa 3 | Analytics Experimental =========
+
 def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
-    """Agrega métricas e gera gráficos citáveis, atendendo ao critério experimental."""
+    """[Etapa: Analytics Experimental] Entrada: diretório opcional onde salvar artefatos.
+    Saída: metadata apontando para CSVs e gráficos consolidados usados na UI."""
     ensure_experiment_log_schema(EXPERIMENT_LOG_COLUMNS)
     csv_path = Path(EXPERIMENT_LOG)
     if not csv_path.exists():
@@ -183,7 +256,18 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    group_cols = [col for col in ["scenario", "mode_used"] if col in df.columns]
+    if "scenario" in df.columns:
+        df["scenario_label"] = df["scenario"].apply(resolve_scenario_label)
+    else:
+        fallback_label = df.get("mode_used") if "mode_used" in df.columns else DEFAULT_SCENARIO_LABEL
+        df["scenario_label"] = fallback_label if isinstance(fallback_label, pd.Series) else DEFAULT_SCENARIO_LABEL
+
+    if "telemetry" in df.columns:
+        df["simulation_label"] = df["telemetry"].apply(classify_simulation_state)
+    else:
+        df["simulation_label"] = "Normal"
+
+    group_cols = [col for col in ["scenario_label", "scenario", "mode_used"] if col in df.columns]
     summary = pd.DataFrame()
     if group_cols:
         aggregations = {col: "mean" for col in numeric_cols}
@@ -221,45 +305,149 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
 
     charts = {}
 
+    def save_chart(fig, filename: str, key: str):
+        chart_path = output_dir_path / filename
+        fig.write_html(chart_path)
+        charts[key] = str(chart_path)
+
     def build_bar_chart(metric: str, title: str, filename: str, y_label: str):
         if summary.empty or metric not in summary.columns:
             return
         if summary[metric].dropna().empty:
             return
+        color_field = "scenario_label" if "scenario_label" in summary.columns else ("scenario" if "scenario" in summary.columns else None)
         fig = px.bar(
             summary,
             x="mode_used",
             y=metric,
-            color="scenario" if "scenario" in summary.columns else None,
+            color=color_field,
             barmode="group",
             title=title,
         )
         fig.update_xaxes(title_text="Modo")
         fig.update_yaxes(title_text=y_label)
-        chart_path = output_dir_path / filename
-        fig.write_html(chart_path)
-        charts[metric] = str(chart_path)
+        save_chart(fig, filename, metric)
 
     build_bar_chart("accuracy", "Accuracy médio por cenário", "accuracy_by_mode.html", "Accuracy médio")
     build_bar_chart("bert_score_f1", "BERTScore F1 médio por cenário", "bert_score_by_mode.html", "BERTScore F1")
     build_bar_chart("bleu", "BLEU médio por cenário", "bleu_by_mode.html", "BLEU")
     build_bar_chart("rouge_l", "ROUGE-L médio por cenário", "rouge_by_mode.html", "ROUGE-L")
 
-    if "latency_ms" in df.columns:
-        latency_x = "mode_used" if "mode_used" in df.columns else None
-        latency_color = "scenario" if "scenario" in df.columns else None
-        fig_latency = px.box(
-            df,
-            x=latency_x,
-            y="latency_ms",
-            color=latency_color,
-            points="all",
-            title="Distribuição de latência",
+    if {"llm_model", "bert_score_f1", "scenario_label"}.issubset(df.columns):
+        llm_quality = (
+            df.dropna(subset=["llm_model", "bert_score_f1"])
+            .groupby(["llm_model", "scenario_label"])["bert_score_f1"]
+            .mean()
+            .reset_index()
         )
-        fig_latency.update_yaxes(title_text="Latência (ms)")
-        latency_path = output_dir_path / "latency_distribution.html"
-        fig_latency.write_html(latency_path)
-        charts["latency"] = str(latency_path)
+        if not llm_quality.empty:
+            fig_llm = px.bar(
+                llm_quality,
+                x="llm_model",
+                y="bert_score_f1",
+                color="scenario_label",
+                title="Comparativo de LLMs por cenário (BERTScore)",
+                barmode="group",
+            )
+            fig_llm.update_xaxes(title_text="LLM")
+            fig_llm.update_yaxes(title_text="BERTScore F1 médio")
+            save_chart(fig_llm, "llm_comparison_by_scenario.html", "llm_comparison")
+
+    if {"vector_backend", "bert_score_f1", "scenario_label"}.issubset(df.columns):
+        backend_df = df.dropna(subset=["vector_backend", "bert_score_f1"])
+        if not backend_df.empty:
+            backend_quality = (
+                backend_df.groupby(["vector_backend", "scenario_label"])["bert_score_f1"].mean().reset_index()
+            )
+            fig_backend = px.bar(
+                backend_quality,
+                x="vector_backend",
+                y="bert_score_f1",
+                color="scenario_label",
+                barmode="group",
+                title="Desempenho por backend vetorial e cenário",
+            )
+            fig_backend.update_xaxes(title_text="Backend Vetorial")
+            fig_backend.update_yaxes(title_text="BERTScore F1 médio")
+            save_chart(fig_backend, "vector_backend_by_scenario.html", "vector_backend")
+
+    quality_metrics = [col for col in ["accuracy", "bleu", "rouge_l", "bert_score_f1"] if col in df.columns]
+    if "simulation_label" in df.columns and quality_metrics:
+        sim_quality = df.groupby("simulation_label")[quality_metrics].mean().reset_index()
+        if not sim_quality.empty:
+            sim_long = sim_quality.melt(id_vars="simulation_label", var_name="metric", value_name="value")
+            fig_sim = px.bar(
+                sim_long,
+                x="simulation_label",
+                y="value",
+                color="metric",
+                barmode="group",
+                title="Indicadores de qualidade por cenário de simulação",
+            )
+            fig_sim.update_xaxes(title_text="Simulação (Normal / Temperatura / Vibração)")
+            fig_sim.update_yaxes(title_text="Valor médio")
+            save_chart(fig_sim, "quality_by_simulation_state.html", "quality_by_simulation")
+
+    if {"latency_ms", "scenario_label"}.issubset(df.columns):
+        latency_df = df.dropna(subset=["latency_ms"]).copy()
+        if not latency_df.empty:
+            fig_latency = px.box(
+                latency_df,
+                x="scenario_label",
+                y="latency_ms",
+                color="scenario_label",
+                points="all",
+                title="Latência por cenário (Zero-Shot vs RAG)",
+            )
+            fig_latency.update_xaxes(title_text="Cenário")
+            fig_latency.update_yaxes(title_text="Latência (ms)")
+            save_chart(fig_latency, "latency_by_scenario.html", "latency_by_scenario")
+            charts.setdefault("latency", charts["latency_by_scenario"])
+
+    token_cols = [col for col in ["prompt_tokens", "response_tokens"] if col in df.columns]
+    if token_cols and "scenario_label" in df.columns:
+        tokens_summary = df.groupby("scenario_label")[token_cols].mean().reset_index()
+        if not tokens_summary.empty:
+            tokens_long = tokens_summary.melt(id_vars="scenario_label", var_name="token_type", value_name="value")
+            fig_tokens = px.bar(
+                tokens_long,
+                x="scenario_label",
+                y="value",
+                color="token_type",
+                barmode="group",
+                title="Uso médio de tokens por cenário",
+            )
+            fig_tokens.update_xaxes(title_text="Cenário")
+            fig_tokens.update_yaxes(title_text="Tokens médios")
+            save_chart(fig_tokens, "tokens_by_scenario.html", "tokens_by_scenario")
+
+    metric_cols = [col for col in ["bert_score_f1", "bleu", "rouge_l"] if col in df.columns]
+    if metric_cols and {"llm_model", "scenario_label"}.issubset(df.columns):
+        llm_metric_df = df.dropna(subset=["llm_model"])
+        if not llm_metric_df.empty:
+            llm_metric_summary = (
+                llm_metric_df.groupby(["llm_model", "scenario_label"])[metric_cols]
+                .mean()
+                .reset_index()
+            )
+            metric_long = llm_metric_summary.melt(
+                id_vars=["llm_model", "scenario_label"],
+                var_name="metric",
+                value_name="value",
+            )
+            if not metric_long.empty:
+                fig_llm_metrics = px.bar(
+                    metric_long,
+                    x="llm_model",
+                    y="value",
+                    color="metric",
+                    barmode="group",
+                    facet_col="scenario_label",
+                    title="BERT F1, BLEU e ROUGE-L por LLM e cenário",
+                )
+                fig_llm_metrics.update_yaxes(title_text="Valor médio")
+                fig_llm_metrics.update_xaxes(title_text="LLM")
+                save_chart(fig_llm_metrics, "llm_metrics_by_scenario.html", "llm_metrics_by_scenario")
 
     if "bert_score_f1" in df.columns:
         history_df = df.dropna(subset=["bert_score_f1"]).copy()
@@ -271,14 +459,12 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
                 x="timestamp",
                 y="bert_score_f1",
                 color=color_key,
-                line_group="scenario" if "scenario" in history_df.columns else None,
+                line_group="scenario_label" if "scenario_label" in history_df.columns else None,
                 markers=True,
                 title="Histórico de BERTScore F1",
             )
             fig_history.update_yaxes(title_text="BERTScore F1")
-            history_path = output_dir_path / "bert_score_history.html"
-            fig_history.write_html(history_path)
-            charts["bert_score_f1_history"] = str(history_path)
+            save_chart(fig_history, "bert_score_history.html", "bert_score_f1_history")
 
     metadata_path = output_dir_path / "summary_metadata.json"
     metadata = {
@@ -300,7 +486,8 @@ def generate_experiment_summary(output_dir: Optional[str] = None) -> dict:
 
 
 def ensure_experiment_log_schema(fieldnames: List[str]):
-    """Garante que o CSV de experimentos contenha o cabeçalho atualizado."""
+    """[Etapa: Analytics Experimental] Entrada: lista de colunas esperadas.
+    Saída: arquivo CSV normalizado com o cabeçalho correto (in-place)."""
     if not os.path.exists(EXPERIMENT_LOG):
         return
     try:
@@ -341,8 +528,11 @@ def ensure_experiment_log_schema(fieldnames: List[str]):
         logger.warning("Falha ao atualizar schema de experiment_logs.csv: %s", exc)
 
 
+# ========= Etapa 4 | Operações com Backends Vetoriais =========
+
 def ensure_backend_supported(backend: str):
-    """Valida o backend informado antes de executar operações de RAG."""
+    """[Etapa: Operações Vetoriais] Entrada: string do backend solicitado.
+    Saída: validação; lança HTTPException se o backend não fizer parte do pipeline."""
     if backend not in SUPPORTED_VECTOR_BACKENDS:
         raise HTTPException(400, f"Backend vetorial '{backend}' não é suportado.")
 
@@ -353,7 +543,8 @@ def upsert_chunks_to_backend(
     metadatas: List[dict],
     embedding_model: str,
 ):
-    """Despacha chunks para o backend vetorial escolhido mantendo paridade entre eles."""
+    """[Etapa: Operações Vetoriais] Entrada: chunks + metadados + backend/embedding.
+    Saída: índices atualizados (Chroma/FAISS/Weaviate/Pinecone) prontos para consulta."""
     # Mantemos implementações separadas para demonstrar integração com diferentes
     # bases vetoriais exigidas no enunciado (Chroma, FAISS, Weaviate, Pinecone).
     backend = backend.lower()
@@ -427,14 +618,15 @@ def upsert_chunks_to_backend(
         store.add_texts(chunks, metadatas=metadatas)
         return
 
-
+#========= Etapa 4 | Operações com Backends Vetoriais ========= RAG
 def query_backend(
     backend: str,
     question: str,
     embedding_model: str,
     top_k: int = 3,
 ) -> tuple[List[str], List[dict]]:
-    """Executa busca semântica no backend selecionado, retornando textos e metadados."""
+    """[Etapa: Operações Vetoriais] Entrada: pergunta e backend configurado.
+    Saída: pares (chunks, metadados) usados pelo RAG estático."""
     # Consulta simétrica a todos os backends para permitir comparar baseline vs RAG
     # sem alterar o restante da pipeline.
     backend = backend.lower()
@@ -501,8 +693,11 @@ def query_backend(
     return [], []
 
 
+# ========= Etapa 5 | Utilidades de Diagnóstico e Debug =========
+
 def estimate_tokens(text: str) -> int:
-    """Estima tokens para monitorar custo/latência mesmo sem contador oficial."""
+    """[Etapa: Utilidades de Diagnóstico] Entrada: texto final do prompt ou resposta.
+    Saída: contagem aproximada de tokens para controle de custo/latência."""
     content = text or ""
     if not content:
         return 0
@@ -516,7 +711,8 @@ def estimate_tokens(text: str) -> int:
 
 
 def safe_float(value, default: float = 0.0) -> float:
-    """Converte leituras de telemetria para float garantindo fallback."""
+    """[Etapa: Telemetria] Entrada: leitura crua vinda do simulador.
+    Saída: valor float seguro usado nos alertas da UI."""
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -524,7 +720,8 @@ def safe_float(value, default: float = 0.0) -> float:
 
 
 def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
-    """Calcula a similaridade cosseno entre dois vetores arbitrários."""
+    """[Etapa: Debug Vetorial] Entrada: dois vetores arbitrários.
+    Saída: similaridade cosseno usada para inspecionar a busca."""
     if not vec_a or not vec_b:
         return 0.0
     dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
@@ -541,7 +738,8 @@ def build_vector_debug(
     metadatas: List[dict],
     embedding_model: str,
 ) -> dict:
-    """Gera embeddings da pergunta/chunks e calcula similaridade para inspeção."""
+    """[Etapa: Debug Vetorial] Entrada: pergunta, chunks recuperados e modelo de embedding.
+    Saída: payload com embeddings/similaridades para conferência na UI."""
     if not question or not chunks:
         return {}
 
@@ -583,8 +781,11 @@ def build_vector_debug(
     }
 
 
+# ========= Etapa 6 | Telemetria Dinâmica =========
+
 def build_telemetry_section(telemetry: Optional[dict], allowed_keys: Optional[List[str]] = None):
-    """Monta o contexto dinâmico respeitando a heurística de sensores selecionados."""
+    """[Etapa: Telemetria] Entrada: snapshot bruto e lista de sinais autorizados.
+    Saída: bloco textual pronto para o prompt + dicionário filtrado."""
     if not telemetry:
         return "", {}
 
@@ -624,8 +825,11 @@ def build_telemetry_section(telemetry: Optional[dict], allowed_keys: Optional[Li
     return "\n".join(telemetry_lines) + "\n", filtered_snapshot
 
 
+# ========= Etapa 7 | Integração com Provedores LLM =========
+
 def normalize_ollama_base(base_url: Optional[str]) -> str:
-    """Normaliza a URL base do Ollama para evitar sufixos duplicados em chamadas."""
+    """[Etapa: Integração LLM] Entrada: URL configurada (ou None para defaults).
+    Saída: endpoint base limpo usado pelas chamadas locais."""
     base = (base_url or "http://ollama:11434").rstrip("/")
     if base.lower().endswith("/v1"):
         base = base[:-3]
@@ -633,7 +837,8 @@ def normalize_ollama_base(base_url: Optional[str]) -> str:
 
 
 def ollama_endpoint(path: str, base_url: Optional[str] = None) -> str:
-    """Monta um endpoint completo do Ollama preservando validações básicas de URL."""
+    """[Etapa: Integração LLM] Entrada: caminho relativo solicitado + URL base opcional.
+    Saída: URL final usada para GET/POST no servidor Ollama."""
     base = normalize_ollama_base(base_url or os.getenv("OLLAMA_BASE_URL"))
     if not base:
         raise ValueError("OLLAMA_BASE_URL não configurada")
@@ -649,7 +854,8 @@ def get_llm_response(
     api_key: str = None,
     timeout_seconds: Optional[int] = None,
 ):
-    """Orquestra chamadas Groq/Gemini/Ollama encapsulando diferenças de API."""
+    """[Etapa: Integração LLM] Entrada: provedor/modelo/prompt e credenciais.
+    Saída: texto gerado pelo LLM escolhido, com tratamento de erros específico."""
     try:
         if provider == "groq":
             key = api_key or os.getenv("GROQ_API_KEY")
@@ -709,7 +915,7 @@ def get_llm_response(
     except Exception as e:
         return f"Erro na chamada do LLM ({provider}): {str(e)}"
 
-# --- Modelos ---
+# ========= Etapa 8 | Modelos de Requisição =========
 class ChatRequest(BaseModel):
     question: str
     scenario: int 
@@ -784,11 +990,12 @@ EXPERIMENT_LOG_COLUMNS = [
     "retrieved_vectors",
 ]
 
-# --- Endpoints ---
+# ========= Etapa 9 | Endpoints FastAPI =========
 
 @app.get("/files")
 def list_files():
-    """Lista PDFs já carregados (elegíveis para reindexação/experimentos)."""
+    """[Etapa: Gestão de Conhecimento] Sem entrada.
+    Retorna: lista simples de PDFs disponíveis para ingestão/RAG."""
     if os.path.exists(KB_Record_File):
         with open(KB_Record_File, "r") as f: return json.load(f)
     return []
@@ -801,7 +1008,8 @@ async def upload_manual(
     chunk_overlap: int = Form(DEFAULT_CHUNK_OVERLAP),
     embedding_model: str = Form(DEFAULT_EMBEDDING_MODEL),
 ):
-    """Recebe um manual PDF, executa chunking/embedding e salva no backend escolhido."""
+    """[Etapa: Ingestão RAG] Entrada: arquivo PDF e parâmetros selecionados na UI.
+    Saída: documento vetorizado no backend informado + contagem de chunks."""
     if not file.filename.endswith('.pdf'):
         raise HTTPException(400, "Apenas PDFs.")
 
@@ -862,7 +1070,8 @@ async def upload_manual(
 
 @app.post("/reindex")
 def reindex_manuals(req: ReindexRequest):
-    """Reprocessa PDFs já enviados com novas configs de chunking/backend."""
+    """[Etapa: Ingestão RAG] Entrada: payload com backend/chunking atualizados.
+    Saída: reindexação dos PDFs já existentes reaproveitando os uploads."""
     # Permite repetir experimentos rapidamente quando o pesquisador troca de
     # backend vetorial ou tune de chunking sem reenviar os PDFs.
     backend_choice = (req.vector_backend or DEFAULT_VECTOR_BACKEND).lower()
@@ -951,7 +1160,8 @@ def reindex_manuals(req: ReindexRequest):
 
 @app.get("/llm/models")
 def list_llm_models(provider: str, api_key: Optional[str] = None):
-    """Retorna os modelos disponíveis para cada provedor (Groq, Gemini, Ollama)."""
+    """[Etapa: Integração LLM] Entrada: provedor (groq/gemini/local) e chave opcional.
+    Saída: lista de modelos com metadados exibidos na UI."""
     provider = provider.lower()
 
     try:
@@ -1033,7 +1243,8 @@ def list_llm_models(provider: str, api_key: Optional[str] = None):
 
 @app.post("/experiments/log")
 def log_experiment(entry: ExperimentLogEntry):
-    """Persiste cada diagnóstico com métricas quantitativas para comparação Baseline vs RAG."""
+    """[Etapa: Analytics Experimental] Entrada: payload completo de um diagnóstico.
+    Saída: registro acrescido no CSV `experiment_logs.csv` para futuras análises."""
     timestamp = entry.timestamp or datetime.now(timezone.utc).isoformat()
     row = {
         "timestamp": timestamp,
@@ -1075,7 +1286,8 @@ def log_experiment(entry: ExperimentLogEntry):
 
 @app.post("/experiments/summarize")
 def summarize_experiments(req: SummaryRequest):
-    """Executa o pipeline de consolidação (CSV/HTML) para citar no relatório."""
+    """[Etapa: Analytics Experimental] Entrada: diretório opcional.
+    Saída: JSON com caminhos dos gráficos/CSVs usados no Streamlit."""
     try:
         summary = generate_experiment_summary(req.output_dir)
     except HTTPException:
@@ -1087,16 +1299,9 @@ def summarize_experiments(req: SummaryRequest):
 
 @app.post("/chat")
 def run_diagnosis(req: ChatRequest):
-    """Executa um diagnóstico completo.
-
-    Entrada:
-        - question: pergunta em linguagem natural.
-        - scenario: 1=baseline, 2=RAG estático, 3=RAG dual.
-        - vector_backend/embedding_model/chunk params (quando relevantes).
-        - telemetry/signals: snapshot do simulador + sinais autorizados.
-
-    Saída: texto do LLM + metadados (backend usado, tokens, telemetria aplicada).
-    """
+    """[Etapa: Endpoint de Diagnóstico] Entrada: parâmetros completos do experimento
+    (pergunta, cenário, backends, telemetria, instruções). Saída: resposta do LLM
+    enriquecida com metadados, telemetria usada e contexto para futura auditoria."""
     base_system = (req.base_system or DEFAULT_BASE_SYSTEM).strip()
     vector_backend = (req.vector_backend or DEFAULT_VECTOR_BACKEND).lower()
     embedding_model = req.embedding_model or DEFAULT_EMBEDDING_MODEL
