@@ -15,11 +15,12 @@ import json
 import os
 import time
 import logging
+from pathlib import Path
 from queue import Queue, Empty
 from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from sacrebleu import corpus_bleu
 from rouge_score import rouge_scorer
 from bert_score import BERTScorer
@@ -29,6 +30,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
 logger = logging.getLogger("web-app")
 LOG_MQTT_EVENTS = os.getenv("LOG_MQTT_EVENTS", "true").lower() == "true"
+BASE_DIR = Path(__file__).resolve().parent
+GABARITO_LIBRARY_PATH = Path(os.getenv("GABARITO_LIBRARY_PATH", BASE_DIR / "docs" / "gabaritos.json"))
 
 def env_or_default(*keys, default=None):
     for key in keys:
@@ -84,6 +87,48 @@ DEFAULT_RESPONSE_FORMAT = {
     "trechos_utilizados": [""],
 }
 DEFAULT_RESPONSE_FORMAT_TEXT = json.dumps(DEFAULT_RESPONSE_FORMAT, indent=2, ensure_ascii=False)
+
+
+def load_reference_answer_library(path: Path = GABARITO_LIBRARY_PATH) -> Dict[str, Dict[str, Any]]:
+    """Carrega o arquivo JSON de gabaritos diretamente do volume compartilhado."""
+
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+            if isinstance(data, dict):
+                return data
+            logger.warning("O arquivo de gabaritos deve conter um objeto JSON na raiz (%s).", path)
+    except FileNotFoundError:
+        logger.warning("Arquivo de gabaritos não encontrado: %s", path)
+    except json.JSONDecodeError as exc:
+        logger.error("Falha ao interpretar %s: %s", path, exc)
+    return {}
+
+
+def format_reference_answer_payload(preset: Dict[str, Any]) -> str:
+    payload = preset.get("answer")
+    if isinstance(payload, dict):
+        return json.dumps(payload, indent=2, ensure_ascii=False)
+    if isinstance(payload, str):
+        return payload.strip()
+    return ""
+
+
+def apply_reference_answer_preset(preset_key: str, library: Dict[str, Dict[str, Any]]) -> bool:
+    preset = library.get(preset_key)
+    if not preset:
+        st.warning(f"Nenhum gabarito cadastrado para '{preset_key}'.")
+        return False
+    text_value = format_reference_answer_payload(preset)
+    if not text_value:
+        st.warning(f"Gabarito configurado para '{preset_key}', mas sem conteúdo válido.")
+        return False
+    st.session_state.reference_answer_text = text_value
+    st.session_state.reference_answer_label = preset.get("label") or preset_key
+    return True
+
+
+REFERENCE_ANSWER_PRESETS = load_reference_answer_library()
 DEFAULT_LLM_TIMEOUT = int(os.getenv("OLLAMA_CHAT_TIMEOUT", "180"))
 BERT_SCORE_MODEL = os.getenv("BERT_SCORE_MODEL", "neuralmind/bert-base-portuguese-cased")
 BERT_SCORE_FALLBACK_MODEL = "xlm-roberta-base"
@@ -217,6 +262,10 @@ if "instructions_text" not in st.session_state:
     st.session_state.instructions_text = DEFAULT_INSTRUCTIONS
 if "response_format_text" not in st.session_state:
     st.session_state.response_format_text = DEFAULT_RESPONSE_FORMAT_TEXT
+if "reference_answer_text" not in st.session_state:
+    st.session_state.reference_answer_text = ""
+if "reference_answer_label" not in st.session_state:
+    st.session_state.reference_answer_label = None
 if "llm_timeout" not in st.session_state:
     st.session_state.llm_timeout = DEFAULT_LLM_TIMEOUT
 if "vector_backend_upload" not in st.session_state:
@@ -713,10 +762,19 @@ with col_ctrl_1:
     st.caption("Injete anomalias para testar o diagnóstico:")
     if st.button("✅ Operação Normal", width="stretch"):
         publish_command("NORMAL")
+        if apply_reference_answer_preset("NORMAL", REFERENCE_ANSWER_PRESETS):
+            label = REFERENCE_ANSWER_PRESETS.get("NORMAL", {}).get("label", "Operação Normal")
+            st.success(f"Gabarito carregado ({label}).")
     if st.button("🔥 Falha Térmica", width="stretch"):
         publish_command("HIGH_TEMP")
+        if apply_reference_answer_preset("HIGH_TEMP", REFERENCE_ANSWER_PRESETS):
+            label = REFERENCE_ANSWER_PRESETS.get("HIGH_TEMP", {}).get("label", "Falha Térmica")
+            st.success(f"Gabarito carregado ({label}).")
     if st.button("〰️ Desbalanceamento", width="stretch"):
         publish_command("HIGH_VIBRATION")
+        if apply_reference_answer_preset("HIGH_VIBRATION", REFERENCE_ANSWER_PRESETS):
+            label = REFERENCE_ANSWER_PRESETS.get("HIGH_VIBRATION", {}).get("label", "Desbalanceamento")
+            st.success(f"Gabarito carregado ({label}).")
 
 with col_ctrl_2:
     st.subheader("🧪 Cenário de Avaliação")
@@ -782,14 +840,17 @@ log_experiments = st.checkbox("Gravar logs de experimentos (CSV)", value=False,
                               help="Armazena cada diagnóstico em /app/data/experiment_logs.csv para análise posterior.")
 reference_answer = ""
 if log_experiments:
-    reference_answer = st.text_area(
+    if st.session_state.reference_answer_label:
+        st.caption(f"Gabarito carregado: {st.session_state.reference_answer_label}")
+    st.text_area(
         "Gabarito (referência para métricas)",
-        value="",
+        key="reference_answer_text",
+        height=280,
         help=(
-            "Cole aqui a resposta oficial (ex.: textos de docs/gabarito.md). Quando preenchido e"
-            " o logging estiver ativo, a API calcula accuracy/BLEU/ROUGE comparando o LLM com o gabarito."
+            "Carregado automaticamente ao clicar nos botões do simulador ou informe manualmente o JSON de referência."
         ),
     )
+    reference_answer = st.session_state.reference_answer_text
 
 if st.button("Gerar Relatório de Diagnóstico", type="primary"):
     if not selected_model:
