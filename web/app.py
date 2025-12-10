@@ -810,7 +810,7 @@ st.markdown("---")
 col_ctrl_1, col_ctrl_2 = st.columns([1, 2])
 
 with col_ctrl_1:
-    st.subheader("🎮 Simulador de Falhas")
+    st.subheader("Simulador de Falhas")
     st.caption("Injete anomalias para testar o diagnóstico:")
     if st.button("Operação Normal", width="stretch"):
         publish_command("NORMAL")

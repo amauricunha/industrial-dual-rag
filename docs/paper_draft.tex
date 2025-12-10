@@ -76,7 +76,26 @@ O cenário Dual apresentou ganho de 30 p.p. em accuracy em relação ao baseline
 \section{Limitações e Trabalhos Futuros}
 Algumas restrições permanecem abertas. (i) O protótipo depende de um broker MQTT público para simplificar a reprodução; quedas do serviço interrompem a telemetria e reduzem a precisão do cenário Dual. Pretende-se migrar para um broker privado com QoS configurável. (ii) As inferências em provedores Groq/Gemini estão sujeitas a políticas de rate limit; quando o serviço retorna HTTP~429 o operador precisa repetir o diagnóstico. Em ambientes críticos recomenda-se manter um modelo Ollama baixado localmente, pagando o custo de hardware adicional. (iii) Cada backend vetorial mantém seu próprio índice, logo alternar entre Chroma, FAISS, Weaviate e Pinecone exige reprocessar os PDFs para garantir paridade experimental. Automatizar a sincronização entre backends é trabalho futuro. (iv) O consumo de disco cresce com o número de experimentos registrados; é necessária uma rotina periódica de arquivamento ou compressão dos logs.
 
+\section{Declaração de Proveniência e Antiplágio}
+As dependências externas empregadas são bibliotecas públicas bem documentadas: FastAPI~\cite{fastapi}, Streamlit~\cite{streamlit}, Sentence-Transformers~\cite{sbert}, Plotly~\cite{plotly} e o avaliador BERTScore~\cite{bertscore}. Não importamos trechos de código de repositórios privados ou desconhecidos; toda a lógica específica da solução reside neste repositório \texttt{industrial-dual-rag}. As referências textuais utilizadas para construir `docs/gabaritos.json` provêm exclusivamente do Manual de Operação ROMI T 240~\cite{romimanual}, garantindo rastreabilidade sobre qualquer citação de normas ou procedimentos OEM.
+
+\subsection{Implementações e Modificações Autorais}
+Implementamos integralmente: (i) ingestão RAG dual que sincroniza telemetria MQTT com documentos vetorizados; (ii) heurística de seleção de sensores e normalização antes da inserção no prompt; (iii) automação de gabaritos carregados em tempo real na UI, permitindo experimentos reprodutíveis; (iv) pipeline de métricas e dashboards Plotly exportados para HTML; (v) mecanismos de auditoria (`vector_debug`, logs de tokens e CSV compartilhado). Ajustes finos como filtros de dataset, prompts e scripts de consolidação foram escritos manualmente, mantendo histórico em git.
+
+\subsection{Uso Responsável de Vibe Coding com Copilot}
+Para seguir o "vibe coding" com GitHub Copilot sem risco de plágio: (1) tratamos sugestões apenas como rascunhos e refatoramos cada trecho antes do commit; (2) registramos nos metadados quaisquer trechos que derivem de manuais ou documentação oficial; (3) nunca colamos respostas literais de LLMs/manuais, preferindo reescrever com base nos dados recuperados; (4) mantemos logs detalhados (prompt, chunks, telemetria) que permitem comprovar autoria; (5) executamos revisões humanas e scanners de similaridade quando o texto final será publicado. Esse protocolo transparente impede denúncias de plágio e preserva o crédito das fontes.
+
 \section{Conclusão}
 Foi demonstrado que a fusão de contexto estático e dinâmico, aliada a ferramentas de experimentação reprodutíveis e ao preenchimento automático de gabaritos diretamente do repositório compartilhado, reduz alucinações e melhora a rastreabilidade das decisões do LLM. A plataforma suporta desde investigações acadêmicas (com coleta automática de métricas e tokens) até provas de conceito industriais que necessitam executar localmente por requisitos de privacidade. Como próximos passos, planeja-se incorporar modelos especializados em manutenção (por exemplo, GPT-4o mini), ampliar o conjunto de sensores e integrar técnicas de aprendizado ativo para sugerir novos experimentos com base nas falhas observadas.
+
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{00}
+\bibitem{fastapi} S. Ram\'\i{}rez, "FastAPI," 2024. [Online]. Available: https://fastapi.tiangolo.com
+\bibitem{streamlit} Streamlit Inc., "Streamlit Documentation," 2024. [Online]. Available: https://docs.streamlit.io
+\bibitem{sbert} N. Reimers and I. Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks," in \emph{Proc. EMNLP}, 2019.
+\bibitem{plotly} Plotly Technologies Inc., "Plotly Python Graphing Library," 2024. [Online]. Available: https://plotly.com/python
+\bibitem{bertscore} T. Zhang, V. Kishore, F. Wu, K. Q. Weinberger, and Y. Artzi, "BERTScore: Evaluating Text Generation with BERT," in \emph{Proc. ICLR}, 2020.
+\bibitem{romimanual} ROMI S.A., "Manual de Operação e Manutenção do Torno T 240," 2023.
+\end{thebibliography}
 
 \end{document}
