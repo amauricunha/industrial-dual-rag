@@ -263,5 +263,17 @@ Recommended Trio
 * **IoT / Mensageria**: MQTT (paho-mqtt), broker Mosquitto público/local, comandos de falha em tempo real.
 
 
+## Uso de Vibe Coding com Copilot
+
+Adotamos o "vibe coding" com GitHub Copilot como ferramenta auxiliar de ideação e produtividade. Para preservar a autoria e atender à Lei de Direitos Autorais brasileira (Lei nº 9.610/98), seguimos estas regras:
+
+1. Toda sugestão gerada pela IA é revisada e reescrita pelos autores antes de entrar no repositório, garantindo que não haja reprodução literal de obras protegidas.
+2. Referências externas (papers, manuais, repositórios) são sempre citadas nos arquivos técnicos ou nos metadados dos chunks, permitindo rastreabilidade e atribuição correta.
+3. Logs detalhados de prompts/chunks (`vector_debug`, `experiment_logs.csv`) documentam a origem do contexto utilizado pelos LLMs, evitando alegações de uso não autorizado.
+4. Quando um trecho deriva claramente de documentação pública (ex.: manual ROMI T 240), o arquivo correspondente (`docs/gabaritos.json`, paper) declara a fonte explicitamente.
+
+Esse procedimento deixa claro que Copilot foi usado como apoio criativo, mas o conteúdo final permanece autoral e em conformidade com a legislação vigente.
+
+
 **Autores**: Amauri Cunha, Yessica Maria Valencia Lemos
 **Data**: 06 de Dezembro 2025
