@@ -62,11 +62,11 @@ Quando o usuário solicita um diagnóstico, o fluxo depende do cenário:
 
 ### Configuração
 
-1. Renomeie ou crie o arquivo .env na raiz:
+1. Renomeie ou crie o arquivo .env na raiz (use placeholders; não exponha chaves reais):
 
 ````
 # Broker MQTT (público ou privado)
-MQTT_BROKER_ADDRESS=<ip ou endereco>
+MQTT_BROKER_ADDRESS=<ip_ou_endereco>
 MQTT_BROKER_PORT=<porta>
 MQTT_USERNAME=<login>
 MQTT_PASSWORD=<senha>
@@ -74,36 +74,35 @@ MQTT_TOPIC_SENSORS=industrial/lathe/sensors
 MQTT_TOPIC_COMMANDS=industrial/lathe/commands
 LOG_MQTT_EVENTS=false
 
-# Chaves de API (Necessário para a inferência real)
-GROQ_API_KEY=sua_chave_aqui
-GOOGLE_API_KEY=sua_chave_aqui
+# Chaves de API (necessárias para inferência real)
+GROQ_API_KEY=<groq_api_key>
+GOOGLE_API_KEY=<google_api_key>
 OLLAMA_BASE_URL=http://ollama:11434
 OLLAMA_CHAT_TIMEOUT=600
 HUGGING_FACE_TOKEN=
 
-# Vetorização / RAG
-VECTOR_BACKEND_DEFAULT=chroma  # opções: chroma, faiss, weaviate, pinecone
+# Configurações gerais / RAG
+API_URL=http://api:8000
+VECTOR_BACKEND_DEFAULT=chroma
 CHUNK_SIZE_DEFAULT=1000
 CHUNK_OVERLAP_DEFAULT=200
 EMBEDDING_MODEL_DEFAULT=all-MiniLM-L6-v2
 FAISS_INDEX_DIR=/app/data/faiss_index
 CHROMA_DB_PATH=/app/data/chromadb
+BERT_SCORE_MODEL=neuralmind/bert-base-portuguese-cased
 
 # Relatórios de experimentos
 SUMMARY_OUTPUT_DIR=/app/data/summaries
 SUMMARY_MAX_RECENT=50
 
-# Avaliação automática
-BERT_SCORE_MODEL=neuralmind/bert-base-portuguese-cased
-
 # Weaviate (opcional)
-WEAVIATE_URL=http://weaviate:8080  # container local já incluso no docker-compose
-WEAVIATE_API_KEY=                  # deixe vazio para uso local sem autenticação
+WEAVIATE_URL=http://weaviate:8080
+WEAVIATE_API_KEY=
 WEAVIATE_CLASS=IndustrialManual
 
 # Pinecone (opcional)
-PINECONE_API_KEY=sua_chave_pinecone
-PINECONE_ENVIRONMENT=us-east-1
+PINECONE_API_KEY=
+PINECONE_ENVIRONMENT=
 PINECONE_INDEX=industrial-dual-rag
 PINECONE_NAMESPACE=default
 PINECONE_DIMENSION=384
@@ -195,7 +194,7 @@ Recommended Trio
 
 2. Injeção de Falha:
 
-* Clique no botão "🔥 Falha Térmica".
+* Clique no botão "Falha Térmica".
 
 * Aguarde a temperatura no painel subir acima de 90°C.
 
@@ -208,7 +207,7 @@ Recommended Trio
 4. Registro e Consolidação:
 
 * Ative o checkbox "Gravar logs de experimentos", informe um gabarito (quando houver) e execute diagnósticos.
-* As métricas são gravadas em `/app/data/experiment_logs.csv`. Após capturar os cenários desejados, clique no botão "📊 Gerar resumo automático" da barra lateral para consolidar CSVs e gráficos em `SUMMARY_OUTPUT_DIR` (padrão: `/app/data/summaries`). Se preferir inspeção manual, continue usando o notebook `notebooks/experiment_summary.ipynb`, que consome os mesmos arquivos.
+* As métricas são gravadas em `/app/data/experiment_logs.csv`. Após capturar os cenários desejados, clique no botão "Gerar resumo automático" da barra lateral para consolidar CSVs e gráficos em `SUMMARY_OUTPUT_DIR` (padrão: `/app/data/summaries`). Se preferir inspeção manual, continue usando o notebook `notebooks/experiment_summary.ipynb`, que consome os mesmos arquivos.
 
 ### Gabaritos de referência
 
