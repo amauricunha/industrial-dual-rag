@@ -589,7 +589,7 @@ with st.sidebar:
     api_key = st.text_input("API Key", type="password", help="Opcional: substitui a chave configurada no backend.")
 
     st.subheader("2. Seleção do Modelo")
-    refresh_models = st.button("🔄 Atualizar modelos disponíveis", width="stretch")
+    refresh_models = st.button("Atualizar modelos disponíveis", width="stretch")
     if refresh_models:
         st.session_state.model_cache_key = None
         st.session_state.model_cache = []
@@ -775,11 +775,11 @@ pump_mqtt_queue()
 
 # --- LAYOUT PRINCIPAL ---
 
-st.title("🏭 Laboratório de IA Generativa: Diagnóstico Ciber-Físico")
+st.title("Laboratório de IA Generativa: Diagnóstico Ciber-Físico")
 st.markdown("Comparação de cenários RAG para sistemas industriais.")
 
 # 1. PAINEL DE SENSORES (Cards)
-st.subheader("📡 Monitoramento em Tempo Real (Contexto Dinâmico)")
+st.subheader("Monitoramento em Tempo Real (Contexto Dinâmico)")
 
 if st.session_state.last_telemetry_time:
     st.caption(f"Última leitura: {st.session_state.last_telemetry_time}")
@@ -801,7 +801,7 @@ with c4:
     st.metric("Corrente Motor", f"{tel.get('current', 0):.1f} A")
 
 # Botão discreto para atualizar UI (caso o stream não force repaint)
-if st.button("🔄 Atualizar Leituras"):
+if st.button("Atualizar Leituras"):
     st.rerun()
 
 st.markdown("---")
@@ -812,24 +812,24 @@ col_ctrl_1, col_ctrl_2 = st.columns([1, 2])
 with col_ctrl_1:
     st.subheader("🎮 Simulador de Falhas")
     st.caption("Injete anomalias para testar o diagnóstico:")
-    if st.button("✅ Operação Normal", width="stretch"):
+    if st.button("Operação Normal", width="stretch"):
         publish_command("NORMAL")
         if apply_reference_answer_preset("NORMAL", REFERENCE_ANSWER_PRESETS):
             label = REFERENCE_ANSWER_PRESETS.get("NORMAL", {}).get("label", "Operação Normal")
             st.success(f"Gabarito carregado ({label}).")
-    if st.button("🔥 Falha Térmica", width="stretch"):
+    if st.button("Falha Térmica", width="stretch"):
         publish_command("HIGH_TEMP")
         if apply_reference_answer_preset("HIGH_TEMP", REFERENCE_ANSWER_PRESETS):
             label = REFERENCE_ANSWER_PRESETS.get("HIGH_TEMP", {}).get("label", "Falha Térmica")
             st.success(f"Gabarito carregado ({label}).")
-    if st.button("〰️ Desbalanceamento", width="stretch"):
+    if st.button("Desbalanceamento", width="stretch"):
         publish_command("HIGH_VIBRATION")
         if apply_reference_answer_preset("HIGH_VIBRATION", REFERENCE_ANSWER_PRESETS):
             label = REFERENCE_ANSWER_PRESETS.get("HIGH_VIBRATION", {}).get("label", "Desbalanceamento")
             st.success(f"Gabarito carregado ({label}).")
 
 with col_ctrl_2:
-    st.subheader("🧪 Cenário de Avaliação")
+    st.subheader("Cenário de Avaliação")
     # Radio principal usado para comparar baseline, RAG estático e dual conforme
     # solicitado no enunciado.
     scenario = st.radio(
@@ -849,7 +849,7 @@ with col_ctrl_2:
         help="Define de qual base vetorial virão os chunks quando o cenário usar RAG.",
     )
 
-st.subheader("⚙️ Prompt e Saída Estruturada")
+st.subheader("Prompt e Saída Estruturada")
 with st.expander("Configurar base system, instruções e formato JSON", expanded=False):
     st.text_area(
         "Base System Prompt",
@@ -884,7 +884,7 @@ with st.expander("Configurar base system, instruções e formato JSON", expanded
 
 # 3. PAINEL DE DIAGNÓSTICO
 st.markdown("---")
-st.subheader("🩺 Painel de Diagnóstico (LLM Output)")
+st.subheader("Painel de Diagnóstico (LLM Output)")
 
 query = st.text_input("Pergunta do Operador", "Qual o estado atual da máquina e recomendações de manutenção?")
 show_debug = st.checkbox("Gerar logs detalhados do prompt", value=True)
@@ -990,9 +990,9 @@ if st.session_state.diagnosis_history:
     if llm_info:
         st.caption(f"LLM: {llm_info.get('provider', 'n/d')} · {llm_info.get('model', 'sem modelo')}")
     if res['context_found'] and scenario > 1:
-        st.success("📚 Documentação Técnica Relevante Encontrada e Utilizada.")
+        st.success("Documentação Técnica Relevante Encontrada e Utilizada.")
     elif scenario > 1:
-        st.warning("⚠️ Nenhuma documentação relevante encontrada para esta consulta.")
+        st.warning("Nenhuma documentação relevante encontrada para esta consulta.")
     if res.get("vector_backend"):
         st.caption(f"Backend Vetorial: {res['vector_backend']}")
     token_info = res.get("token_usage") or {}
@@ -1059,7 +1059,7 @@ if st.session_state.diagnosis_history:
                                 st.write(item["chunk_preview"])
                             render_vector_preview(f"Vetor do chunk {chunk_label}", item.get("embedding", []))
 
-    st.caption("Este resultado deve ser comparado com o 'Ground Truth' para avaliação experimental.")
+    st.caption("Este resultado deve ser validado por um especialista.")
 
 # Atualização automática do dashboard (opcional)
 if st.session_state.auto_refresh_enabled:
