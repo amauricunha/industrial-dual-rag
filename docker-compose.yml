@@ -39,6 +39,7 @@ services:
     image: ollama/ollama:latest
     ports:
       - "11434:11434"
+    gpus: all
     volumes:
       - ollama_models:/root/.ollama
     env_file:
