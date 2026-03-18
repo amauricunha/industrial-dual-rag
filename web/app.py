@@ -47,12 +47,13 @@ def env_or_default(*keys, default=None):
 
 # ========= Etapa Frontend 1 | Setup de Conexões =========
 API_URL = os.getenv("API_URL", "http://api:8000")
-MQTT_BROKER = env_or_default("MQTT_BROKER_ADDRESS", "MQTT_BROKER", default="test.mosquitto.org")
-MQTT_PORT = int(env_or_default("MQTT_BROKER_PORT", default=1883))
-MQTT_TOPIC_DATA = env_or_default("MQTT_TOPIC_SENSORS", "MQTT_TOPIC", default="industrial/lathe/sensors")
-MQTT_TOPIC_CMD = env_or_default("MQTT_TOPIC_COMMANDS", default="industrial/lathe/commands")
-MQTT_USER = os.getenv("MQTT_USERNAME")
-MQTT_PASS = os.getenv("MQTT_PASSWORD")
+MQTT_DEFAULT_BROKER = env_or_default("MQTT_BROKER_ADDRESS", "MQTT_BROKER", default="test.mosquitto.org")
+MQTT_DEFAULT_PORT = int(env_or_default("MQTT_BROKER_PORT", default=1883))
+MQTT_DEFAULT_TOPIC_DATA = env_or_default("MQTT_TOPIC_SENSORS", "MQTT_TOPIC", default="industrial/lathe/sensors")
+MQTT_DEFAULT_TOPIC_CMD = env_or_default("MQTT_TOPIC_COMMANDS", default="industrial/lathe/commands")
+MQTT_DEFAULT_USER = os.getenv("MQTT_USERNAME") or ""
+MQTT_DEFAULT_PASS = os.getenv("MQTT_PASSWORD") or ""
+MQTT_CONFIG_PATH = Path(os.getenv("MQTT_CONFIG_PATH", "/app/data/mqtt_config.json"))
 VECTOR_BACKEND_OPTIONS = ["chroma", "faiss", "weaviate", "pinecone"]
 DEFAULT_VECTOR_BACKEND = os.getenv("VECTOR_BACKEND_DEFAULT", "chroma").lower()
 DEFAULT_CHUNK_SIZE = int(os.getenv("CHUNK_SIZE_DEFAULT", "1000"))
@@ -154,6 +155,74 @@ TELEMETRY_SIGNAL_OPTIONS = [
     ("current", "Corrente do motor (A)"),
 ]
 TELEMETRY_SIGNAL_DEFAULTS = [opt[0] for opt in TELEMETRY_SIGNAL_OPTIONS]
+
+
+def default_mqtt_config() -> Dict[str, Any]:
+    return {
+        "broker": MQTT_DEFAULT_BROKER,
+        "port": MQTT_DEFAULT_PORT,
+        "use_auth": bool(MQTT_DEFAULT_USER and MQTT_DEFAULT_PASS),
+        "username": MQTT_DEFAULT_USER,
+        "password": MQTT_DEFAULT_PASS,
+        "topic_sensors": MQTT_DEFAULT_TOPIC_DATA,
+        "topic_commands": MQTT_DEFAULT_TOPIC_CMD,
+    }
+
+
+def parse_topics(raw_topics: str) -> list[str]:
+    return [item.strip() for item in (raw_topics or "").split(",") if item.strip()]
+
+
+def sanitize_mqtt_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    defaults = default_mqtt_config()
+    merged = {**defaults, **(config or {})}
+    try:
+        merged["port"] = int(merged.get("port", defaults["port"]))
+    except Exception:
+        merged["port"] = defaults["port"]
+    merged["use_auth"] = bool(merged.get("use_auth"))
+    merged["broker"] = str(merged.get("broker", "")).strip() or defaults["broker"]
+    merged["username"] = str(merged.get("username", "")).strip()
+    merged["password"] = str(merged.get("password", ""))
+    merged["topic_sensors"] = str(merged.get("topic_sensors", "")).strip() or defaults["topic_sensors"]
+    merged["topic_commands"] = str(merged.get("topic_commands", "")).strip() or defaults["topic_commands"]
+    return merged
+
+
+def load_mqtt_config() -> Dict[str, Any]:
+    cfg = default_mqtt_config()
+    try:
+        if MQTT_CONFIG_PATH.exists():
+            with MQTT_CONFIG_PATH.open("r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+                if isinstance(payload, dict):
+                    cfg = sanitize_mqtt_config(payload)
+    except Exception as exc:
+        logger.warning("Falha ao ler %s: %s", MQTT_CONFIG_PATH, exc)
+    return cfg
+
+
+def save_mqtt_config(config: Dict[str, Any]) -> None:
+    cfg = sanitize_mqtt_config(config)
+    MQTT_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with MQTT_CONFIG_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(cfg, handle, ensure_ascii=False, indent=2)
+
+
+def mqtt_config_signature(config: Dict[str, Any]) -> str:
+    cfg = sanitize_mqtt_config(config)
+    return json.dumps(
+        {
+            "broker": cfg["broker"],
+            "port": cfg["port"],
+            "use_auth": cfg["use_auth"],
+            "username": cfg["username"],
+            "password": cfg["password"],
+            "topic_sensors": cfg["topic_sensors"],
+            "topic_commands": cfg["topic_commands"],
+        },
+        sort_keys=True,
+    )
 
 st.set_page_config(page_title="Industrial Dual-RAG Lab", layout="wide")
 
@@ -261,8 +330,30 @@ if "telemetry" not in st.session_state:
     st.session_state.telemetry = {"temperature": 0, "vibration": 0, "current": 0, "status": "OFFLINE"}
 if "diagnosis_history" not in st.session_state:
     st.session_state.diagnosis_history = None
+if "mqtt_config" not in st.session_state:
+    st.session_state.mqtt_config = load_mqtt_config()
+if "mqtt_broker_draft" not in st.session_state:
+    st.session_state.mqtt_broker_draft = st.session_state.mqtt_config.get("broker", "")
+if "mqtt_port_draft" not in st.session_state:
+    st.session_state.mqtt_port_draft = int(st.session_state.mqtt_config.get("port", 1883))
+if "mqtt_use_auth_draft" not in st.session_state:
+    st.session_state.mqtt_use_auth_draft = bool(st.session_state.mqtt_config.get("use_auth", False))
+if "mqtt_username_draft" not in st.session_state:
+    st.session_state.mqtt_username_draft = st.session_state.mqtt_config.get("username", "")
+if "mqtt_password_draft" not in st.session_state:
+    st.session_state.mqtt_password_draft = st.session_state.mqtt_config.get("password", "")
+if "mqtt_topic_sensors_draft" not in st.session_state:
+    st.session_state.mqtt_topic_sensors_draft = st.session_state.mqtt_config.get("topic_sensors", "")
+if "mqtt_topic_commands_draft" not in st.session_state:
+    st.session_state.mqtt_topic_commands_draft = st.session_state.mqtt_config.get("topic_commands", "")
 if "mqtt_error" not in st.session_state:
     st.session_state.mqtt_error = None
+if "mqtt_connected" not in st.session_state:
+    st.session_state.mqtt_connected = False
+if "mqtt_client" not in st.session_state:
+    st.session_state.mqtt_client = None
+if "mqtt_signature" not in st.session_state:
+    st.session_state.mqtt_signature = None
 if "llm_model_choice" not in st.session_state:
     st.session_state.llm_model_choice = ""
 if "model_cache_key" not in st.session_state:
@@ -345,40 +436,79 @@ def on_message(client, userdata, msg):
     except Exception as exc:
         logger.error("Falha ao processar mensagem MQTT: %s", exc)
 
-@st.cache_resource
-def start_mqtt():
+def stop_mqtt_client(client) -> None:
+    if not client:
+        return
+    try:
+        client.loop_stop()
+    except Exception:
+        pass
+    try:
+        client.disconnect()
+    except Exception:
+        pass
+
+
+def start_mqtt(force_reconnect: bool = False):
     """[Etapa: Integração MQTT] Sem entrada.
     Saída: cliente conectado e em loop, pronto para alimentar o dashboard."""
-    if not MQTT_BROKER or not MQTT_TOPIC_DATA:
-        st.session_state.mqtt_error = "Variáveis de ambiente MQTT não configuradas."
+    config = sanitize_mqtt_config(st.session_state.mqtt_config)
+    config_sig = mqtt_config_signature(config)
+    broker = config["broker"]
+    port = int(config["port"])
+    topic_data_list = parse_topics(config["topic_sensors"])
+
+    existing_client = st.session_state.get("mqtt_client")
+    existing_sig = st.session_state.get("mqtt_signature")
+
+    if (
+        existing_client
+        and not force_reconnect
+        and existing_sig == config_sig
+        and existing_client.is_connected()
+    ):
+        st.session_state.mqtt_connected = True
+        return existing_client
+
+    if existing_client and (force_reconnect or existing_sig != config_sig):
+        stop_mqtt_client(existing_client)
+        st.session_state.mqtt_client = None
+
+    if not broker or not topic_data_list:
+        st.session_state.mqtt_error = "Configuração MQTT inválida: informe broker e tópico(s) de telemetria."
+        st.session_state.mqtt_connected = False
         return None
 
     client = build_mqtt_client()
-    if MQTT_USER and MQTT_PASS:
-        client.username_pw_set(MQTT_USER, MQTT_PASS)
+    if config["use_auth"] and config["username"]:
+        client.username_pw_set(config["username"], config["password"])
     try:
         if LOG_MQTT_EVENTS:
             logger.info(
                 "Conectando ao broker %s:%s (dados=%s, comandos=%s)",
-                MQTT_BROKER,
-                MQTT_PORT,
-                MQTT_TOPIC_DATA,
-                MQTT_TOPIC_CMD,
+                broker,
+                port,
+                topic_data_list,
+                config["topic_commands"],
             )
-        client.connect(MQTT_BROKER, MQTT_PORT, 60)
-        client.subscribe(MQTT_TOPIC_DATA)
+        client.connect(broker, port, 60)
+        for topic in topic_data_list:
+            client.subscribe(topic)
         client.on_message = on_message
         client.loop_start()
         if LOG_MQTT_EVENTS:
-            logger.info("Assinatura MQTT ativa no tópico %s", MQTT_TOPIC_DATA)
+            logger.info("Assinatura MQTT ativa nos tópicos %s", topic_data_list)
         st.session_state.mqtt_error = None
+        st.session_state.mqtt_connected = True
+        st.session_state.mqtt_client = client
+        st.session_state.mqtt_signature = config_sig
         return client
     except Exception as e:
         st.session_state.mqtt_error = str(e)
+        st.session_state.mqtt_connected = False
+        st.session_state.mqtt_client = None
         logger.error("Erro ao conectar ao broker MQTT: %s", e)
         return None
-
-mqtt_client = start_mqtt()
 
 
 def pump_mqtt_queue():
@@ -397,6 +527,15 @@ def pump_mqtt_queue():
             logger.info("Atualizando dashboard com telemetria: %s", payload)
         updated = True
     return updated
+
+
+def get_active_mqtt_client():
+    client = st.session_state.get("mqtt_client")
+    if client and client.is_connected():
+        st.session_state.mqtt_connected = True
+        return client
+    st.session_state.mqtt_connected = False
+    return start_mqtt(force_reconnect=False)
 
 
 # ========= Etapa Frontend 6 | Comunicação com a API FastAPI =========
@@ -439,15 +578,18 @@ def get_cached_models(provider: str, api_key: str | None):
 def publish_command(command: str):
     """[Etapa: Comunicação com API] Entrada: comando textual (NORMAL/HIGH_TEMP etc.).
     Saída: bool indicando se a publicação MQTT foi realizada."""
+    mqtt_client = get_active_mqtt_client()
+    mqtt_config = sanitize_mqtt_config(st.session_state.mqtt_config)
+    mqtt_topic_cmd = mqtt_config.get("topic_commands", "").strip()
     if not mqtt_client:
         st.warning("Broker MQTT não conectado.")
         return False
-    if not MQTT_TOPIC_CMD:
+    if not mqtt_topic_cmd:
         st.warning("Tópico MQTT de comandos não configurado.")
         return False
     if LOG_MQTT_EVENTS:
-        logger.info("Publicando comando MQTT | topic=%s | payload=%s", MQTT_TOPIC_CMD, command)
-    mqtt_client.publish(MQTT_TOPIC_CMD, command)
+        logger.info("Publicando comando MQTT | topic=%s | payload=%s", mqtt_topic_cmd, command)
+    mqtt_client.publish(mqtt_topic_cmd, command)
     return True
 
 
@@ -583,6 +725,68 @@ st.markdown("""
 # --- SIDEBAR: CONFIGURAÇÃO ---
 with st.sidebar:
     st.title("🎛️ Configuração Experimental")
+
+    st.subheader("0. Broker MQTT")
+    st.text_input("IP/Host do broker", key="mqtt_broker_draft")
+    st.number_input("Porta MQTT", min_value=1, max_value=65535, step=1, key="mqtt_port_draft")
+    st.toggle(
+        "Broker com autenticação",
+        key="mqtt_use_auth_draft",
+        help="Desative para broker aberto (sem usuário/senha).",
+    )
+    if st.session_state.mqtt_use_auth_draft:
+        st.text_input("Usuário MQTT", key="mqtt_username_draft")
+        st.text_input("Senha MQTT", type="password", key="mqtt_password_draft")
+    else:
+        st.session_state.mqtt_username_draft = ""
+        st.session_state.mqtt_password_draft = ""
+
+    st.text_input(
+        "Tópico(s) de telemetria (assinatura)",
+        key="mqtt_topic_sensors_draft",
+        help="Aceita múltiplos tópicos separados por vírgula.",
+    )
+    st.text_input(
+        "Tópico de comandos (publicação)",
+        key="mqtt_topic_commands_draft",
+    )
+
+    mqtt_draft_config = sanitize_mqtt_config(
+        {
+            "broker": st.session_state.mqtt_broker_draft,
+            "port": st.session_state.mqtt_port_draft,
+            "use_auth": st.session_state.mqtt_use_auth_draft,
+            "username": st.session_state.mqtt_username_draft,
+            "password": st.session_state.mqtt_password_draft,
+            "topic_sensors": st.session_state.mqtt_topic_sensors_draft,
+            "topic_commands": st.session_state.mqtt_topic_commands_draft,
+        }
+    )
+
+    col_mqtt_1, col_mqtt_2 = st.columns(2)
+    with col_mqtt_1:
+        if st.button("Salvar MQTT", width="stretch"):
+            st.session_state.mqtt_config = mqtt_draft_config
+            try:
+                save_mqtt_config(st.session_state.mqtt_config)
+                st.success(f"Configuração salva em {MQTT_CONFIG_PATH}")
+            except Exception as exc:
+                st.error(f"Falha ao salvar configuração MQTT: {exc}")
+    with col_mqtt_2:
+        if st.button("Conectar MQTT", width="stretch"):
+            st.session_state.mqtt_config = mqtt_draft_config
+            start_mqtt(force_reconnect=True)
+
+    mqtt_client = get_active_mqtt_client()
+    is_connected = bool(mqtt_client and mqtt_client.is_connected())
+    st.session_state.mqtt_connected = is_connected
+    status_text = "🟢 Conectado" if is_connected else "🔴 Desconectado"
+    if is_connected:
+        status_text += f" ({st.session_state.mqtt_config['broker']}:{st.session_state.mqtt_config['port']})"
+    elif st.session_state.mqtt_error:
+        status_text += f" — {st.session_state.mqtt_error}"
+    st.info("Status do Broker: " + status_text)
+    st.markdown("---")
     
     st.subheader("1. Modelo Generativo")
     llm_provider = st.selectbox("Provedor LLM", ["groq", "gemini", "local"])
@@ -723,12 +927,6 @@ with st.sidebar:
             except Exception as exc:
                 st.error(f"Erro de conexão: {exc}")
     
-    st.markdown("---")
-    status_text = "🟢 Conectado" if mqtt_client else "🔴 Desconectado"
-    if not mqtt_client and st.session_state.mqtt_error:
-        status_text += f" — {st.session_state.mqtt_error}"
-    st.info("Status do Broker: " + status_text)
-
     st.subheader("4. Atualização da Telemetria")
     st.session_state.auto_refresh_enabled = st.toggle(
         "Atualização automática (2s)",
@@ -769,6 +967,8 @@ with st.sidebar:
                 st.error(f"Erro de conexão: {exc}")
 
 selected_model = st.session_state.llm_model_choice
+
+mqtt_client = get_active_mqtt_client()
 
 # Atualiza telemetria com qualquer mensagem pendente do MQTT
 pump_mqtt_queue()

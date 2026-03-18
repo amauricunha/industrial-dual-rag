@@ -5,18 +5,57 @@ import json
 import random
 import os
 import logging
+from pathlib import Path
 import paho.mqtt.client as mqtt
 
 # Configurações
-BROKER = os.getenv("MQTT_BROKER_ADDRESS", "test.mosquitto.org")
-PORT = int(os.getenv("MQTT_BROKER_PORT", 1883))
-USER = os.getenv("MQTT_USERNAME")
-PASS = os.getenv("MQTT_PASSWORD")
-TOPIC_DATA = os.getenv("MQTT_TOPIC_SENSORS", "industrial/lathe/sensors")
-TOPIC_CMD = os.getenv("MQTT_TOPIC_COMMANDS", "industrial/lathe/commands")
+MQTT_CONFIG_PATH = Path(os.getenv("MQTT_CONFIG_PATH", "/app/data/mqtt_config.json"))
+
+
+def load_mqtt_runtime_config() -> dict:
+    env_config = {
+        "broker": os.getenv("MQTT_BROKER_ADDRESS", "test.mosquitto.org"),
+        "port": int(os.getenv("MQTT_BROKER_PORT", 1883)),
+        "use_auth": bool(os.getenv("MQTT_USERNAME") and os.getenv("MQTT_PASSWORD")),
+        "username": os.getenv("MQTT_USERNAME", ""),
+        "password": os.getenv("MQTT_PASSWORD", ""),
+        "topic_sensors": os.getenv("MQTT_TOPIC_SENSORS", "industrial/lathe/sensors"),
+        "topic_commands": os.getenv("MQTT_TOPIC_COMMANDS", "industrial/lathe/commands"),
+    }
+    try:
+        if MQTT_CONFIG_PATH.exists():
+            with MQTT_CONFIG_PATH.open("r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+            if isinstance(payload, dict):
+                env_config.update(payload)
+                logger.info("Configuração MQTT carregada de %s", MQTT_CONFIG_PATH)
+    except Exception as exc:
+        logger.warning("Falha ao ler configuração MQTT (%s): %s", MQTT_CONFIG_PATH, exc)
+
+    try:
+        env_config["port"] = int(env_config.get("port", 1883))
+    except Exception:
+        env_config["port"] = 1883
+    env_config["broker"] = str(env_config.get("broker", "test.mosquitto.org")).strip() or "test.mosquitto.org"
+    env_config["topic_sensors"] = str(env_config.get("topic_sensors", "industrial/lathe/sensors")).strip() or "industrial/lathe/sensors"
+    env_config["topic_commands"] = str(env_config.get("topic_commands", "industrial/lathe/commands")).strip() or "industrial/lathe/commands"
+    env_config["username"] = str(env_config.get("username", ""))
+    env_config["password"] = str(env_config.get("password", ""))
+    env_config["use_auth"] = bool(env_config.get("use_auth"))
+    return env_config
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s | %(message)s")
 logger = logging.getLogger("simulator")
+
+runtime_mqtt = load_mqtt_runtime_config()
+BROKER = runtime_mqtt["broker"]
+PORT = runtime_mqtt["port"]
+USER = runtime_mqtt["username"]
+PASS = runtime_mqtt["password"]
+USE_AUTH = runtime_mqtt["use_auth"]
+TOPIC_DATA = runtime_mqtt["topic_sensors"]
+TOPIC_CMD = runtime_mqtt["topic_commands"]
+ACTIVE_CONFIG_SIGNATURE = json.dumps(runtime_mqtt, sort_keys=True)
 
 # Estado Inicial
 # Mantemos quatro sinais (status, temperatura, vibração, corrente) pois eles
@@ -29,6 +68,50 @@ state = {
 }
 
 mode = "NORMAL"
+last_connect_attempt = 0.0
+
+
+def reconnect_client(client, config: dict, reason: str = "") -> bool:
+    global BROKER, PORT, USER, PASS, USE_AUTH, TOPIC_DATA, TOPIC_CMD, ACTIVE_CONFIG_SIGNATURE
+
+    BROKER = config["broker"]
+    PORT = config["port"]
+    USER = config["username"]
+    PASS = config["password"]
+    USE_AUTH = config["use_auth"]
+    TOPIC_DATA = config["topic_sensors"]
+    TOPIC_CMD = config["topic_commands"]
+    ACTIVE_CONFIG_SIGNATURE = json.dumps(config, sort_keys=True)
+
+    try:
+        client.loop_stop()
+    except Exception:
+        pass
+    try:
+        client.disconnect()
+    except Exception:
+        pass
+
+    if USE_AUTH and USER:
+        client.username_pw_set(USER, PASS)
+    else:
+        client.username_pw_set(None, None)
+
+    try:
+        client.connect(BROKER, PORT, 60)
+        client.loop_start()
+        logger.info(
+            "Conexão MQTT solicitada | broker=%s:%s | topic_data=%s | topic_cmd=%s | motivo=%s",
+            BROKER,
+            PORT,
+            TOPIC_DATA,
+            TOPIC_CMD,
+            reason or "n/a",
+        )
+        return True
+    except Exception as exc:
+        logger.error("Erro ao conectar ao broker: %s", exc)
+        return False
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
@@ -50,21 +133,23 @@ try:
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 except AttributeError:
     client = mqtt.Client()
-if USER and PASS:
-    client.username_pw_set(USER, PASS)
 client.on_connect = on_connect
 client.on_message = on_message
 
-try:
-    client.connect(BROKER, PORT, 60)
-    client.loop_start()
-except Exception as e:
-    logger.error("Erro ao conectar ao broker: %s", e)
-    # Fallback para loop local sem MQTT (para debug)
-    pass
+reconnect_client(client, runtime_mqtt, reason="startup")
 
 logger.info("Iniciando geração de dados. Publicando em %s", TOPIC_DATA)
 while True:
+    latest_cfg = load_mqtt_runtime_config()
+    latest_sig = json.dumps(latest_cfg, sort_keys=True)
+    now = time.time()
+    if latest_sig != ACTIVE_CONFIG_SIGNATURE:
+        reconnect_client(client, latest_cfg, reason="config_changed")
+        logger.info("Configuração MQTT atualizada via arquivo compartilhado.")
+    elif not client.is_connected() and now - last_connect_attempt >= 5:
+        reconnect_client(client, latest_cfg, reason="retry")
+        last_connect_attempt = now
+
     # Física Simplificada: cada modo altera os sinais para criar casos de teste
     # repetíveis (baseline vs. falha), conforme exigido no enunciado.
     if mode == "NORMAL":

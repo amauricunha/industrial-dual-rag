@@ -12,15 +12,19 @@ services:
     depends_on:
       - ollama
     networks:
-      - rag-net
+      - influx_default
 
   simulator:
     build: ./simulator
     env_file:
       - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data/api:/app/data
     restart: unless-stopped
     networks:
-      - rag-net
+      - influx_default
 
   web:
     build: ./web
@@ -28,12 +32,15 @@ services:
       - "8501:8501"
     env_file:
       - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
+      - ./data/api:/app/data
       - ./docs:/app/docs:ro
     depends_on:
       - api
     networks:
-      - rag-net
+      - influx_default
 
   ollama:
     image: ollama/ollama:latest
@@ -59,7 +66,7 @@ services:
           fi
           wait $$PID
     networks:
-      - rag-net
+      - influx_default
 
   weaviate:
     image: semitechnologies/weaviate:1.24.8
@@ -75,10 +82,10 @@ services:
     volumes:
       - ./data/weaviate:/var/lib/weaviate
     networks:
-      - rag-net
+      - influx_default
 
 networks:
-  rag-net:
+  influx_default:
     driver: bridge
 
 volumes:

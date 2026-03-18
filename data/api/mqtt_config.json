@@ -1,0 +1,9 @@
+{
+  "broker": "192.168.250.3",
+  "port": 1883,
+  "use_auth": true,
+  "username": "smart40",
+  "password": "SmArT40SeNaI@xYz",
+  "topic_sensors": "industrial/lathe/sensors",
+  "topic_commands": "industrial/lathe/commands"
+}
